@@ -10,5 +10,7 @@ setup(
     entry_points='''
         [console_scripts]
         turmyx=turmyx:cli
+        turmyx-url-opener=turmyx:opener
+        turmyx-file-editor=turmyx:editor
     ''',
 )

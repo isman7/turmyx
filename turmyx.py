@@ -14,16 +14,18 @@ IMG_EDITOR_EXT = [
 
 
 @click.group(invoke_without_command=True)
+def cli():
+    """Example script."""
+    click.echo('This is turmyx! A script launcher for external files/url in Termux. Enjoy!')
+
+
+@cli.command()
 @click.argument('file',
                 type=click.Path(exists=True),
                 required=False,
                 )
-@click.option('--config', default=False, required=False)
-def cli(file, config):
-    """Example script."""
-    click.echo('This is turmyx! A script launcher for downloaded files to Termux. Enjoy!')
-
-    if isinstance(file, str) and not config:
+def editor(file):
+    if isinstance(file, str):
         file_name = os.path.basename(file)
 
         extension = file_name.split('.')[-1]
@@ -36,8 +38,11 @@ def cli(file, config):
             print("¯\_ツ_/¯ : Extension not recognised.")
 
 
-
-
 @cli.command()
-def opener():
-    print("opener")
+@click.argument('url',
+                type=str,
+                required=False,
+                )
+def opener(url):
+    if isinstance(url, str):
+        pass
