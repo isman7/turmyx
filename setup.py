@@ -6,6 +6,7 @@ setup(
     py_modules=['turmyx'],
     install_requires=[
         'Click',
+        'configparser'
     ],
     entry_points='''
         [console_scripts]

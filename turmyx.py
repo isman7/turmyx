@@ -1,16 +1,20 @@
 import os
 import click
 import subprocess
+from configparser import ConfigParser, ExtendedInterpolation
 
-TEXT_EDITOR_EXT = [
-    'txt',
-]
 
-IMG_EDITOR_EXT = [
-    'png',
-    'jpg',
-    'bmp',
-]
+CONFIG = ConfigParser(interpolation=ExtendedInterpolation())
+CONFIG.read("configuration.ini")
+
+
+def guess_file_command(extension, configuration):
+    assert isinstance(extension, str)
+    assert isinstance(configuration, ConfigParser)
+
+    for section in configuration.sections():
+        if extension in configuration[section]["extensions"]:
+            return configuration[section]["command"]
 
 
 @click.group(invoke_without_command=True)
@@ -27,15 +31,13 @@ def cli():
 def editor(file):
     if isinstance(file, str):
         file_name = os.path.basename(file)
-
         extension = file_name.split('.')[-1]
-        if extension in TEXT_EDITOR_EXT:
-            subprocess.check_call(['nano', file])
-            print("(^o^)丿 : Successfully edited with Termux.")
-        elif extension in IMG_EDITOR_EXT:
-            print("¯\_ツ_/¯ : Not implemented yet, soon!")
+        command = guess_file_command(extension, CONFIG)
+
+        if command:
+            subprocess.check_call([command, file])
         else:
-            print("¯\_ツ_/¯ : Extension not recognised.")
+            click.echo("¯\_ツ_/¯ : Extension not recognised.")
 
 
 @cli.command()
