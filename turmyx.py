@@ -21,7 +21,9 @@ def guess_file_command(extension, configuration):
 
 @click.group(invoke_without_command=True)
 def cli():
-    """Example script."""
+    """
+    This is turmyx! A script launcher for external files/url in Termux. Enjoy!
+    """
     click.echo('This is turmyx! A script launcher for external files/url in Termux. Enjoy!')
 
 
@@ -31,6 +33,13 @@ def cli():
                 required=False,
                 )
 def editor(file):
+    """
+    Run suitable editor for any file in Termux.
+
+    You can soft-link this command with:
+
+    ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
+    """
     if isinstance(file, str):
         file_name = os.path.basename(file)
         extension = file_name.split('.')[-1]
@@ -51,6 +60,13 @@ def editor(file):
                 required=False,
                 )
 def opener(url):
+    """
+    Run suitable parser for any url in Termux.
+
+    You can soft-link this command with:
+
+    ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
+    """
     if isinstance(url, str):
         for section in CONFIG.sections():
             if "opener" in section:
