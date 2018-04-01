@@ -52,4 +52,11 @@ def editor(file):
                 )
 def opener(url):
     if isinstance(url, str):
-        pass
+        for section in CONFIG.sections():
+            if "opener" in section:
+                command = CONFIG[section]["command"]
+                try:
+                    subprocess.check_call([command, url])
+                except FileNotFoundError:
+                    click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+
