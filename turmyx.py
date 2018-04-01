@@ -4,8 +4,10 @@ import subprocess
 from configparser import ConfigParser, ExtendedInterpolation
 
 
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+
 CONFIG = ConfigParser(interpolation=ExtendedInterpolation())
-CONFIG.read("configuration.ini")
+CONFIG.read(os.path.join(DIR_PATH, "configuration.ini"))
 
 
 def guess_file_command(extension, configuration):
@@ -35,7 +37,10 @@ def editor(file):
         command = guess_file_command(extension, CONFIG)
 
         if command:
-            subprocess.check_call([command, file])
+            try:
+                subprocess.check_call([command, file])
+            except FileNotFoundError:
+                click.echo("'{}' not found. Please check the any typo or installation.".format(command))
         else:
             click.echo("¯\_ツ_/¯ : Extension not recognised.")
 
