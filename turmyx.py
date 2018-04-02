@@ -11,14 +11,19 @@ CONFIG = ConfigParser(interpolation=ExtendedInterpolation())
 CONFIG.read(os.path.join(DIR_PATH, "configuration.ini"))
 
 
-def guess_file_command(extension, configuration):
-    assert isinstance(extension, str)
+def guess_file_command(file, configuration):
+    assert isinstance(file, str)
     assert isinstance(configuration, ConfigParser)
+
+    file_name = os.path.basename(file)
+    extension = file_name.split('.')[-1]
 
     for section in configuration.sections():
         if "default" not in section and "editor" in section:
             if extension in configuration[section]["extensions"]:
-                return configuration[section]["command"]
+                return section
+
+    return "editor:default"
 
 
 @click.group(invoke_without_command=True)
@@ -43,23 +48,26 @@ def editor(file):
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
     if isinstance(file, str):
-        file_name = os.path.basename(file)
-        extension = file_name.split('.')[-1]
-        command = guess_file_command(extension, CONFIG)
+        section = guess_file_command(file, CONFIG)
+        command = CONFIG[section]["command"]
 
-        if command:
-            try:
-                subprocess.check_call([command, file])
-            except FileNotFoundError:
-                click.echo("'{}' not found. Please check the any typo or installation.".format(command))
-        else:
-            # click.echo("¯\_ツ_/¯ : Extension not recognised.")
+        try:
+            if "command_args" in section:
+                arguments = CONFIG[section]["command_args"]
+                call_args = [command] + arguments.split(" ") + [file]
+            else:
+                call_args = [command, file]
+
+            subprocess.check_call([command, file])
+
             # print(CONFIG["editor:default"])
-            command = CONFIG["editor:default"]["command"]
-            arguments = CONFIG["editor:default"]["command_args"]
-            call_args = [command] + arguments.split(" ") + [file]
+            # click.echo("¯\_ツ_/¯ : Extension not recognised.")
+
             print(call_args)
             subprocess.check_call(call_args)
+
+        except FileNotFoundError:
+            click.echo("'{}' not found. Please check the any typo or installation.".format(command))
 
 
 @cli.command()
