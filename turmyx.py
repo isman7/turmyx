@@ -78,7 +78,7 @@ def cli(config_ctx):
 @turmyx_config_context
 def config(config_ctx, file, mode, view):
     """
-    Set configuration file by overriding the last one.
+    Set configuration file.
 
     You can use a mode flag to configure how to save the new configuration. Both can't be combined, so the last one
     to be called will be the used by the config command.
@@ -179,4 +179,31 @@ def opener(config_ctx, url):
 
         except FileNotFoundError:
             click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+
+
+@cli.command()
+@click.argument('script',
+                type=str,
+                required=True)
+@turmyx_config_context
+def add(config_ctx, script):
+    pass
+
+
+@cli.command()
+@click.argument('script',
+                type=str,
+                required=True)
+@turmyx_config_context
+def remove(config_ctx, script):
+    pass
+
+
+@cli.command()
+@click.argument('script',
+                type=str,
+                required=True)
+@turmyx_config_context
+def run(config_ctx, script):
+    pass
 
