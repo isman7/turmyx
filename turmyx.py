@@ -86,26 +86,31 @@ def config(config_ctx, file, mode, view):
 
     if file:
 
+        os.remove(config_ctx.config_path)
+
         abs_path = os.path.abspath(file)
         click.echo("Absolute path for provided file: {}".format(abs_path))
 
         new_config = TurmyxConfig()
         new_config.read(abs_path)
 
+        # TODO: validate this config file.
+
         if not mode:
             with open(config_ctx.config_path, "w") as config_f:
                 new_config.write(config_f)
-            click.echo("Succesfully saved.")
+            click.echo("Succesfully saved into {}.".format(config_ctx.config_path))
         elif mode == "merge":
             # First attempt, only overriding partials:
 
             config_ctx.read(abs_path)
             with open(config_ctx.config_path, "w") as config_f:
                 config_ctx.write(config_f)
-            click.echo("Succesfully merged {} saved into {}.".format(abs_path, config_ctx.config_path))
+            click.echo("Succesfully merged: {} \n into: {} \n and saved.".format(abs_path, config_ctx.config_path))
 
         elif mode == "symlink":
-            click.echo("Symlink mode not implemented yet.")
+            os.symlink(abs_path, config_ctx.config_path)
+            click.echo("Succesfully linked: {} \n to: {}.".format(config_ctx.config_path, abs_path))
 
     if view:
         with open(config_ctx.config_path, 'r') as config_f:
