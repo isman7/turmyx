@@ -7,43 +7,47 @@ from urllib.parse import urlparse
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-CONFIG = ConfigParser(interpolation=ExtendedInterpolation())
-CONFIG.read(os.path.join(DIR_PATH, "configuration.ini"))
 
+class TurmyxConfig(ConfigParser):
+    def __init__(self, *args, **kwargs):
+        super(TurmyxConfig, self).__init__(*args, **kwargs)
 
-def guess_file_command(file, configuration):
-    assert isinstance(file, str)
-    assert isinstance(configuration, ConfigParser)
+    def guess_file_command(self, file):
+        assert isinstance(file, str)
+        assert isinstance(self, ConfigParser)
 
-    file_name = os.path.basename(file)
-    extension = file_name.split('.')[-1]
+        file_name = os.path.basename(file)
+        extension = file_name.split('.')[-1]
 
-    for section in configuration.sections():
-        if "default" not in section and "editor" in section:
-            if extension in configuration[section]["extensions"]:
-                return section
+        for section in self.sections():
+            if "default" not in section and "editor" in section:
+                if extension in self[section]["extensions"]:
+                    return section
 
-    return "editor:default"
+        return "editor:default"
 
+    def guess_url_command(self, url):
+        assert isinstance(url, str)
+        assert isinstance(self, ConfigParser)
 
-def guess_url_command(url, configuration):
-    assert isinstance(url, str)
-    assert isinstance(configuration, ConfigParser)
+        url_parsed = urlparse(url)
+        domain = url_parsed.netloc
 
-    url_parsed = urlparse(url)
-    domain = url_parsed.netloc
+        if not domain:
+            print("Failed to parse URL. Attempt default opener.")
+            return "opener:default"
 
-    if not domain:
-        print("Failed to parse URL. Attempt default opener.")
+        for section in self.sections():
+            if "default" not in section and "opener" in section:
+                print(section)
+                if domain in self[section]["domains"]:
+                    return section
+
         return "opener:default"
 
-    for section in configuration.sections():
-        if "default" not in section and "opener" in section:
-            print(section)
-            if domain in configuration[section]["domains"]:
-                return section
 
-    return "opener:default"
+CONFIG = TurmyxConfig(interpolation=ExtendedInterpolation())
+CONFIG.read(os.path.join(DIR_PATH, "configuration.ini"))
 
 
 @click.group(invoke_without_command=True)
@@ -68,7 +72,7 @@ def editor(file):
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
     if isinstance(file, str):
-        section = guess_file_command(file, CONFIG)
+        section = CONFIG.guess_file_command(file)
         command = CONFIG[section]["command"]
 
         try:
@@ -99,7 +103,7 @@ def opener(url):
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
     if isinstance(url, str):
-        section = guess_url_command(url, CONFIG)
+        section = CONFIG.guess_url_command(url)
         command = CONFIG[section]["command"]
 
         try:
