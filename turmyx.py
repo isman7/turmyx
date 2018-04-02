@@ -11,6 +11,7 @@ class TurmyxConfig(ConfigParser):
     def __init__(self):
         self.config_path = os.path.join(self.DIR_PATH, "configuration.ini")
         super(TurmyxConfig, self).__init__(interpolation=ExtendedInterpolation())
+        self.read(self.config_path)
 
     def guess_file_command(self, file):
         assert isinstance(file, str)
@@ -55,9 +56,9 @@ def cli(config_ctx):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
-    config_ctx.read(config_ctx.config_path)
+    # config_ctx.read(config_ctx.config_path)
     # click.echo(click.get_current_context().get_help())
-
+    pass
 
 @cli.command()
 @click.option('--merge',
@@ -187,7 +188,7 @@ def opener(config_ctx, url):
                 required=True)
 @turmyx_config_context
 def add(config_ctx, script):
-    pass
+    click.echo("Not implemented yet")
 
 
 @cli.command()
@@ -196,7 +197,7 @@ def add(config_ctx, script):
                 required=True)
 @turmyx_config_context
 def remove(config_ctx, script):
-    pass
+    click.echo("Not implemented yet")
 
 
 @cli.command()
@@ -205,5 +206,5 @@ def remove(config_ctx, script):
                 required=True)
 @turmyx_config_context
 def run(config_ctx, script):
-    pass
+    click.echo("Not implemented yet")
 
