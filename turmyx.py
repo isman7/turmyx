@@ -5,11 +5,11 @@ from configparser import ConfigParser, ExtendedInterpolation
 from urllib.parse import urlparse
 
 
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-
-
 class TurmyxConfig(ConfigParser):
+    DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+
     def __init__(self):
+        self.config_path = os.path.join(self.DIR_PATH, "configuration.ini")
         super(TurmyxConfig, self).__init__(interpolation=ExtendedInterpolation())
 
     def guess_file_command(self, file):
@@ -55,16 +55,46 @@ def cli(config_ctx):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
-    config_ctx.read(os.path.join(DIR_PATH, "configuration.ini"))
-    click.echo(click.get_current_context().get_help())
+    config_ctx.read(config_ctx.config_path)
+    # click.echo(click.get_current_context().get_help())
+
 
 @cli.command()
+@click.option('--merge',
+              'mode',
+              flag_value='merge',
+              help="Merge new file config into the existing file.")
+@click.option('--symlink',
+              'mode',
+              flag_value='symlink',
+              help="Symlink to the provided configuration file.")
+@click.argument('file',
+                type=click.Path(exists=True),
+                required=False,
+                )
 @turmyx_config_context
-def config(config_ctx):
+def config(config_ctx, file, mode):
     """
-    Configure Turmyx options.
+    Set configuration file by overriding the last one.
+
+    You can use a mode flag to configure how to save the new configuration. Both can't be combined, so the last one
+    to be called will be the used by the config command.
     """
-    pass
+
+    abs_path = os.path.abspath(file)
+    click.echo("Absolute path for provided file: {}".format(abs_path))
+
+    new_config = TurmyxConfig()
+    new_config.read(abs_path)
+
+    if not mode:
+        with open(config_ctx.config_path, "w") as config_f:
+            new_config.write(config_f)
+        click.echo("Succesfully saved.")
+    elif mode == "merge":
+        click.echo("Not implemented yet.")
+    elif mode == "symlink":
+        click.echo("Not implemented yet.")
 
 
 @cli.command()
