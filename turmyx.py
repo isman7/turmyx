@@ -9,8 +9,8 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 
 class TurmyxConfig(ConfigParser):
-    def __init__(self, *args, **kwargs):
-        super(TurmyxConfig, self).__init__(*args, **kwargs)
+    def __init__(self):
+        super(TurmyxConfig, self).__init__(interpolation=ExtendedInterpolation())
 
     def guess_file_command(self, file):
         assert isinstance(file, str)
@@ -46,15 +46,16 @@ class TurmyxConfig(ConfigParser):
         return "opener:default"
 
 
-CONFIG = TurmyxConfig(interpolation=ExtendedInterpolation())
-CONFIG.read(os.path.join(DIR_PATH, "configuration.ini"))
+turmyx_config_context = click.make_pass_decorator(TurmyxConfig, ensure=True)
 
 
 @click.group(invoke_without_command=True)
-def cli():
+@turmyx_config_context
+def cli(config):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
+    config.read(os.path.join(DIR_PATH, "configuration.ini"))
     click.echo('This is turmyx! A script launcher for external files/url in Termux. Enjoy!')
 
 
@@ -63,7 +64,8 @@ def cli():
                 type=click.Path(exists=True),
                 required=False,
                 )
-def editor(file):
+@turmyx_config_context
+def editor(config, file):
     """
     Run suitable editor for any file in Termux.
 
@@ -72,12 +74,12 @@ def editor(file):
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
     if isinstance(file, str):
-        section = CONFIG.guess_file_command(file)
-        command = CONFIG[section]["command"]
+        section = config.guess_file_command(file)
+        command = config[section]["command"]
 
         try:
             if "command_args" in section:
-                arguments = CONFIG[section]["command_args"]
+                arguments = config[section]["command_args"]
                 call_args = [command] + arguments.split(" ") + [file]
             else:
                 call_args = [command, file]
@@ -94,7 +96,8 @@ def editor(file):
                 type=str,
                 required=False,
                 )
-def opener(url):
+@turmyx_config_context
+def opener(config, url):
     """
     Run suitable parser for any url in Termux.
 
@@ -103,12 +106,12 @@ def opener(url):
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
     if isinstance(url, str):
-        section = CONFIG.guess_url_command(url)
-        command = CONFIG[section]["command"]
+        section = config.guess_url_command(url)
+        command = config[section]["command"]
 
         try:
             if "command_args" in section:
-                arguments = CONFIG[section]["command_args"]
+                arguments = config[section]["command_args"]
                 call_args = [command] + arguments.split(" ") + [url]
             else:
                 call_args = [command, url]
