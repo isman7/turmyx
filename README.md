@@ -63,7 +63,7 @@ Enjoy!
 # TODO LIST
 
 - `--config-file` argument to turmyx main command.
-- A url parser to be able to differ domains.
+- ~~A url parser to be able to differ domains~~.
 - More than one parser/editor per url/file. With CLI input to choose.
 - Additional commands such as: `add`, `remove`, etc to configure scripts from terminal, not only config file.
 - Possible output handlers, such as: Termux-api.

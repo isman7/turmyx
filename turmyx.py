@@ -2,6 +2,7 @@ import os
 import click
 import subprocess
 from configparser import ConfigParser, ExtendedInterpolation
+from urllib.parse import urlparse
 
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -10,13 +11,39 @@ CONFIG = ConfigParser(interpolation=ExtendedInterpolation())
 CONFIG.read(os.path.join(DIR_PATH, "configuration.ini"))
 
 
-def guess_file_command(extension, configuration):
-    assert isinstance(extension, str)
+def guess_file_command(file, configuration):
+    assert isinstance(file, str)
     assert isinstance(configuration, ConfigParser)
 
+    file_name = os.path.basename(file)
+    extension = file_name.split('.')[-1]
+
     for section in configuration.sections():
-        if extension in configuration[section]["extensions"]:
-            return configuration[section]["command"]
+        if "default" not in section and "editor" in section:
+            if extension in configuration[section]["extensions"]:
+                return section
+
+    return "editor:default"
+
+
+def guess_url_command(url, configuration):
+    assert isinstance(url, str)
+    assert isinstance(configuration, ConfigParser)
+
+    url_parsed = urlparse(url)
+    domain = url_parsed.netloc
+
+    if not domain:
+        print("Failed to parse URL. Attempt default opener.")
+        return "opener:default"
+
+    for section in configuration.sections():
+        if "default" not in section and "opener" in section:
+            print(section)
+            if domain in configuration[section]["domains"]:
+                return section
+
+    return "opener:default"
 
 
 @click.group(invoke_without_command=True)
@@ -41,17 +68,21 @@ def editor(file):
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
     if isinstance(file, str):
-        file_name = os.path.basename(file)
-        extension = file_name.split('.')[-1]
-        command = guess_file_command(extension, CONFIG)
+        section = guess_file_command(file, CONFIG)
+        command = CONFIG[section]["command"]
 
-        if command:
-            try:
-                subprocess.check_call([command, file])
-            except FileNotFoundError:
-                click.echo("'{}' not found. Please check the any typo or installation.".format(command))
-        else:
-            click.echo("¯\_ツ_/¯ : Extension not recognised.")
+        try:
+            if "command_args" in section:
+                arguments = CONFIG[section]["command_args"]
+                call_args = [command] + arguments.split(" ") + [file]
+            else:
+                call_args = [command, file]
+
+            click.echo(" ".join(call_args))
+            subprocess.check_call(call_args)
+
+        except FileNotFoundError:
+            click.echo("'{}' not found. Please check the any typo or installation.".format(command))
 
 
 @cli.command()
@@ -68,11 +99,19 @@ def opener(url):
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
     if isinstance(url, str):
-        for section in CONFIG.sections():
-            if "opener" in section:
-                command = CONFIG[section]["command"]
-                try:
-                    subprocess.check_call([command, url])
-                except FileNotFoundError:
-                    click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+        section = guess_url_command(url, CONFIG)
+        command = CONFIG[section]["command"]
+
+        try:
+            if "command_args" in section:
+                arguments = CONFIG[section]["command_args"]
+                call_args = [command] + arguments.split(" ") + [url]
+            else:
+                call_args = [command, url]
+
+            click.echo(" ".join(call_args))
+            subprocess.check_call(call_args)
+
+        except FileNotFoundError:
+            click.echo("'{}' not found. Please check the any typo or installation.".format(command))
 
