@@ -26,6 +26,26 @@ def guess_file_command(file, configuration):
     return "editor:default"
 
 
+def guess_url_command(url, configuration):
+    assert isinstance(url, str)
+    assert isinstance(configuration, ConfigParser)
+
+    url_parsed = urlparse(url)
+    domain = url_parsed.netloc
+
+    if not domain:
+        print("Failed to parse URL. Attempt default opener.")
+        return "opener:default"
+
+    for section in configuration.sections():
+        if "default" not in section and "opener" in section:
+            print(section)
+            if domain in configuration[section]["domains"]:
+                return section
+
+    return "opener:default"
+
+
 @click.group(invoke_without_command=True)
 def cli():
     """
@@ -58,12 +78,7 @@ def editor(file):
             else:
                 call_args = [command, file]
 
-            subprocess.check_call([command, file])
-
-            # print(CONFIG["editor:default"])
-            # click.echo("¯\_ツ_/¯ : Extension not recognised.")
-
-            print(call_args)
+            click.echo(" ".join(call_args))
             subprocess.check_call(call_args)
 
         except FileNotFoundError:
@@ -84,11 +99,19 @@ def opener(url):
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
     if isinstance(url, str):
-        for section in CONFIG.sections():
-            if "opener" in section and "default" in section:
-                command = CONFIG[section]["command"]
-                try:
-                    subprocess.check_call([command, url])
-                except FileNotFoundError:
-                    click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+        section = guess_url_command(url, CONFIG)
+        command = CONFIG[section]["command"]
+
+        try:
+            if "command_args" in section:
+                arguments = CONFIG[section]["command_args"]
+                call_args = [command] + arguments.split(" ") + [url]
+            else:
+                call_args = [command, url]
+
+            click.echo(" ".join(call_args))
+            subprocess.check_call(call_args)
+
+        except FileNotFoundError:
+            click.echo("'{}' not found. Please check the any typo or installation.".format(command))
 
