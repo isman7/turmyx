@@ -26,8 +26,7 @@ Some help outputs:
 $ turmyx --help
 Usage: turmyx [OPTIONS] COMMAND [ARGS]...
 
-  This is turmyx! A script launcher for external files/url in
-  Termux. Enjoy!
+  This is turmyx! A script launcher for external files/url in Termux. Enjoy!
 
 Options:
   --help  Show this message and exit.
@@ -62,8 +61,8 @@ Enjoy!
 
 # TODO LIST
 
-- `--config-file` argument to turmyx main command.
-- ~~A url parser to be able to differ domains~~.
+- ~~`--config-file` argument to turmyx main command.~~ config command!
+- ~~A url parser to be able to differ domains.~~ urlib.parse!
 - More than one parser/editor per url/file. With CLI input to choose.
 - Additional commands such as: `add`, `remove`, etc to configure scripts from terminal, not only config file.
 - Possible output handlers, such as: Termux-api.

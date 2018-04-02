@@ -5,53 +5,116 @@ from configparser import ConfigParser, ExtendedInterpolation
 from urllib.parse import urlparse
 
 
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+class TurmyxConfig(ConfigParser):
+    DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-CONFIG = ConfigParser(interpolation=ExtendedInterpolation())
-CONFIG.read(os.path.join(DIR_PATH, "configuration.ini"))
+    def __init__(self):
+        self.config_path = os.path.join(self.DIR_PATH, "configuration.ini")
+        super(TurmyxConfig, self).__init__(interpolation=ExtendedInterpolation())
 
+    def guess_file_command(self, file):
+        assert isinstance(file, str)
+        assert isinstance(self, ConfigParser)
 
-def guess_file_command(file, configuration):
-    assert isinstance(file, str)
-    assert isinstance(configuration, ConfigParser)
+        file_name = os.path.basename(file)
+        extension = file_name.split('.')[-1]
 
-    file_name = os.path.basename(file)
-    extension = file_name.split('.')[-1]
+        for section in self.sections():
+            if "default" not in section and "editor" in section:
+                if extension in self[section]["extensions"]:
+                    return section
 
-    for section in configuration.sections():
-        if "default" not in section and "editor" in section:
-            if extension in configuration[section]["extensions"]:
-                return section
+        return "editor:default"
 
-    return "editor:default"
+    def guess_url_command(self, url):
+        assert isinstance(url, str)
+        assert isinstance(self, ConfigParser)
 
+        url_parsed = urlparse(url)
+        domain = url_parsed.netloc
 
-def guess_url_command(url, configuration):
-    assert isinstance(url, str)
-    assert isinstance(configuration, ConfigParser)
+        if not domain:
+            print("Failed to parse URL. Attempt default opener.")
+            return "opener:default"
 
-    url_parsed = urlparse(url)
-    domain = url_parsed.netloc
+        for section in self.sections():
+            if "default" not in section and "opener" in section:
+                print(section)
+                if domain in self[section]["domains"]:
+                    return section
 
-    if not domain:
-        print("Failed to parse URL. Attempt default opener.")
         return "opener:default"
 
-    for section in configuration.sections():
-        if "default" not in section and "opener" in section:
-            print(section)
-            if domain in configuration[section]["domains"]:
-                return section
 
-    return "opener:default"
+turmyx_config_context = click.make_pass_decorator(TurmyxConfig, ensure=True)
 
 
 @click.group(invoke_without_command=True)
-def cli():
+@turmyx_config_context
+def cli(config_ctx):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
-    click.echo('This is turmyx! A script launcher for external files/url in Termux. Enjoy!')
+    config_ctx.read(config_ctx.config_path)
+    # click.echo(click.get_current_context().get_help())
+
+
+@cli.command()
+@click.option('--merge',
+              'mode',
+              flag_value='merge',
+              help="Merge new file config into the existing file.")
+@click.option('--symlink',
+              'mode',
+              flag_value='symlink',
+              help="Symlink to the provided configuration file.")
+@click.option('--view',
+              is_flag=True,
+              help="Output the actual configuration of Turmyx scripts.")
+@click.argument('file',
+                type=click.Path(exists=True),
+                required=False,
+                )
+@turmyx_config_context
+def config(config_ctx, file, mode, view):
+    """
+    Set configuration file by overriding the last one.
+
+    You can use a mode flag to configure how to save the new configuration. Both can't be combined, so the last one
+    to be called will be the used by the config command.
+    """
+
+    if file:
+
+        os.remove(config_ctx.config_path)
+
+        abs_path = os.path.abspath(file)
+        click.echo("Absolute path for provided file: {}".format(abs_path))
+
+        new_config = TurmyxConfig()
+        new_config.read(abs_path)
+
+        # TODO: validate this config file.
+
+        if not mode:
+            with open(config_ctx.config_path, "w") as config_f:
+                new_config.write(config_f)
+            click.echo("Succesfully saved into {}.".format(config_ctx.config_path))
+        elif mode == "merge":
+            # First attempt, only overriding partials:
+
+            config_ctx.read(abs_path)
+            with open(config_ctx.config_path, "w") as config_f:
+                config_ctx.write(config_f)
+            click.echo("Succesfully merged: {} \n into: {} \n and saved.".format(abs_path, config_ctx.config_path))
+
+        elif mode == "symlink":
+            os.symlink(abs_path, config_ctx.config_path)
+            click.echo("Succesfully linked: {} \n to: {}.".format(config_ctx.config_path, abs_path))
+
+    if view:
+        with open(config_ctx.config_path, 'r') as config_f:
+            click.echo(config_f.read())
 
 
 @cli.command()
@@ -59,7 +122,8 @@ def cli():
                 type=click.Path(exists=True),
                 required=False,
                 )
-def editor(file):
+@turmyx_config_context
+def editor(config_ctx, file):
     """
     Run suitable editor for any file in Termux.
 
@@ -68,12 +132,12 @@ def editor(file):
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
     if isinstance(file, str):
-        section = guess_file_command(file, CONFIG)
-        command = CONFIG[section]["command"]
+        section = config_ctx.guess_file_command(file)
+        command = config_ctx[section]["command"]
 
         try:
             if "command_args" in section:
-                arguments = CONFIG[section]["command_args"]
+                arguments = config_ctx[section]["command_args"]
                 call_args = [command] + arguments.split(" ") + [file]
             else:
                 call_args = [command, file]
@@ -90,7 +154,8 @@ def editor(file):
                 type=str,
                 required=False,
                 )
-def opener(url):
+@turmyx_config_context
+def opener(config_ctx, url):
     """
     Run suitable parser for any url in Termux.
 
@@ -99,12 +164,12 @@ def opener(url):
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
     if isinstance(url, str):
-        section = guess_url_command(url, CONFIG)
-        command = CONFIG[section]["command"]
+        section = config_ctx.guess_url_command(url)
+        command = config_ctx[section]["command"]
 
         try:
             if "command_args" in section:
-                arguments = CONFIG[section]["command_args"]
+                arguments = config_ctx[section]["command_args"]
                 call_args = [command] + arguments.split(" ") + [url]
             else:
                 call_args = [command, url]
