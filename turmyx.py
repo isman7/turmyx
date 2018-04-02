@@ -51,12 +51,20 @@ turmyx_config_context = click.make_pass_decorator(TurmyxConfig, ensure=True)
 
 @click.group(invoke_without_command=True)
 @turmyx_config_context
-def cli(config):
+def cli(config_ctx):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
-    config.read(os.path.join(DIR_PATH, "configuration.ini"))
-    click.echo('This is turmyx! A script launcher for external files/url in Termux. Enjoy!')
+    config_ctx.read(os.path.join(DIR_PATH, "configuration.ini"))
+    click.echo(click.get_current_context().get_help())
+
+@cli.command()
+@turmyx_config_context
+def config(config_ctx):
+    """
+    Configure Turmyx options.
+    """
+    pass
 
 
 @cli.command()
@@ -65,7 +73,7 @@ def cli(config):
                 required=False,
                 )
 @turmyx_config_context
-def editor(config, file):
+def editor(config_ctx, file):
     """
     Run suitable editor for any file in Termux.
 
@@ -74,12 +82,12 @@ def editor(config, file):
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
     if isinstance(file, str):
-        section = config.guess_file_command(file)
-        command = config[section]["command"]
+        section = config_ctx.guess_file_command(file)
+        command = config_ctx[section]["command"]
 
         try:
             if "command_args" in section:
-                arguments = config[section]["command_args"]
+                arguments = config_ctx[section]["command_args"]
                 call_args = [command] + arguments.split(" ") + [file]
             else:
                 call_args = [command, file]
@@ -97,7 +105,7 @@ def editor(config, file):
                 required=False,
                 )
 @turmyx_config_context
-def opener(config, url):
+def opener(config_ctx, url):
     """
     Run suitable parser for any url in Termux.
 
@@ -106,12 +114,12 @@ def opener(config, url):
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
     if isinstance(url, str):
-        section = config.guess_url_command(url)
-        command = config[section]["command"]
+        section = config_ctx.guess_url_command(url)
+        command = config_ctx[section]["command"]
 
         try:
             if "command_args" in section:
-                arguments = config[section]["command_args"]
+                arguments = config_ctx[section]["command_args"]
                 call_args = [command] + arguments.split(" ") + [url]
             else:
                 call_args = [command, url]
