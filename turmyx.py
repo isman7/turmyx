@@ -92,7 +92,12 @@ def config(config_ctx, file, mode):
             new_config.write(config_f)
         click.echo("Succesfully saved.")
     elif mode == "merge":
-        click.echo("Not implemented yet.")
+        # First attempt, only overriding partials:
+
+        config_ctx.read(abs_path)
+        with open(config_ctx.config_path, "w") as config_f:
+            config_ctx.write(config_f)
+        click.echo("Succesfully merged {} saved into {}.".format(abs_path, config_ctx.config_path))
     elif mode == "symlink":
         click.echo("Not implemented yet.")
 
