@@ -68,12 +68,15 @@ def cli(config_ctx):
               'mode',
               flag_value='symlink',
               help="Symlink to the provided configuration file.")
+@click.option('--view',
+              is_flag=True,
+              help="Output the actual configuration of Turmyx scripts.")
 @click.argument('file',
                 type=click.Path(exists=True),
                 required=False,
                 )
 @turmyx_config_context
-def config(config_ctx, file, mode):
+def config(config_ctx, file, mode, view):
     """
     Set configuration file by overriding the last one.
 
@@ -81,25 +84,32 @@ def config(config_ctx, file, mode):
     to be called will be the used by the config command.
     """
 
-    abs_path = os.path.abspath(file)
-    click.echo("Absolute path for provided file: {}".format(abs_path))
+    if file:
 
-    new_config = TurmyxConfig()
-    new_config.read(abs_path)
+        abs_path = os.path.abspath(file)
+        click.echo("Absolute path for provided file: {}".format(abs_path))
 
-    if not mode:
-        with open(config_ctx.config_path, "w") as config_f:
-            new_config.write(config_f)
-        click.echo("Succesfully saved.")
-    elif mode == "merge":
-        # First attempt, only overriding partials:
+        new_config = TurmyxConfig()
+        new_config.read(abs_path)
 
-        config_ctx.read(abs_path)
-        with open(config_ctx.config_path, "w") as config_f:
-            config_ctx.write(config_f)
-        click.echo("Succesfully merged {} saved into {}.".format(abs_path, config_ctx.config_path))
-    elif mode == "symlink":
-        click.echo("Not implemented yet.")
+        if not mode:
+            with open(config_ctx.config_path, "w") as config_f:
+                new_config.write(config_f)
+            click.echo("Succesfully saved.")
+        elif mode == "merge":
+            # First attempt, only overriding partials:
+
+            config_ctx.read(abs_path)
+            with open(config_ctx.config_path, "w") as config_f:
+                config_ctx.write(config_f)
+            click.echo("Succesfully merged {} saved into {}.".format(abs_path, config_ctx.config_path))
+
+        elif mode == "symlink":
+            click.echo("Symlink mode not implemented yet.")
+
+    if view:
+        with open(config_ctx.config_path, 'r') as config_f:
+            click.echo(config_f.read())
 
 
 @cli.command()
