@@ -2,6 +2,7 @@ import os
 import click
 import subprocess
 from configparser import ConfigParser, ExtendedInterpolation
+from urllib.parse import urlparse
 
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -15,8 +16,9 @@ def guess_file_command(extension, configuration):
     assert isinstance(configuration, ConfigParser)
 
     for section in configuration.sections():
-        if extension in configuration[section]["extensions"]:
-            return configuration[section]["command"]
+        if "default" not in section and "editor" in section:
+            if extension in configuration[section]["extensions"]:
+                return configuration[section]["command"]
 
 
 @click.group(invoke_without_command=True)
@@ -51,7 +53,13 @@ def editor(file):
             except FileNotFoundError:
                 click.echo("'{}' not found. Please check the any typo or installation.".format(command))
         else:
-            click.echo("¯\_ツ_/¯ : Extension not recognised.")
+            # click.echo("¯\_ツ_/¯ : Extension not recognised.")
+            # print(CONFIG["editor:default"])
+            command = CONFIG["editor:default"]["command"]
+            arguments = CONFIG["editor:default"]["command_args"]
+            call_args = [command] + arguments.split(" ") + [file]
+            print(call_args)
+            subprocess.check_call(call_args)
 
 
 @cli.command()
@@ -69,7 +77,7 @@ def opener(url):
     """
     if isinstance(url, str):
         for section in CONFIG.sections():
-            if "opener" in section:
+            if "opener" in section and "default" in section:
                 command = CONFIG[section]["command"]
                 try:
                     subprocess.check_call([command, url])
