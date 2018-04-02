@@ -197,7 +197,25 @@ def add(config_ctx, script):
                 required=True)
 @turmyx_config_context
 def remove(config_ctx, script):
-    click.echo("Not implemented yet")
+    """
+    Removes launch configuration for the given script name.
+    """
+    if config_ctx.remove_section(script):
+        click.echo("Script configuration successfully removed!")
+
+        with open(config_ctx.config_path, 'w') as config_f:
+            config_ctx.write(config_f)
+    else:
+        click.echo("Configuration not found.")
+        section_guesses = []
+        for section in config_ctx.sections():
+            if script in section:
+                section_guesses.append(section)
+
+        if section_guesses:
+            click.echo("Maybe you want to say:\n{}".format(
+                "\n".join(section_guesses)
+            ))
 
 
 @cli.command()
