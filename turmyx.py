@@ -60,6 +60,7 @@ def cli(config_ctx):
     # click.echo(click.get_current_context().get_help())
     pass
 
+
 @cli.command()
 @click.option('--merge',
               'mode',
@@ -183,12 +184,47 @@ def opener(config_ctx, url):
 
 
 @cli.command()
+@click.argument('mode',
+                type=str,
+                nargs=1,
+                )
+@click.option('--name',
+              type=str,
+              nargs=1,
+              )
+@click.option('--default',
+              is_flag=True,
+              help='The script will be saved as default one for the given mode, --name and --extensions/--domains '
+                   'would be ignored if this flag is true.'
+              )
 @click.argument('script',
                 type=str,
                 required=True)
+@click.argument('cases_list',
+                type=str,
+                nargs=-1,
+                required=False,
+                )
 @turmyx_config_context
-def add(config_ctx, script):
-    click.echo("Not implemented yet")
+def add(config_ctx, script, mode, cases_list, name, default):
+    """
+    Examples:
+
+        turmyx add editor nano txt md ini
+
+        turmyx add --name radare editor r2 exe
+
+        turmyx add opener youtube-dl youtube.com youtu.be
+
+        turmyx add --default opener qr
+
+
+    Adds a new script to Turmyx, the configuration is setted inline by an OPTION --name, otherwhise the name is
+    guessed from script name. The argument MODE has to be 'editor' or 'opener' and sets the run environment of the
+    script. SCRIPT must be a valid path to the script/program, and must be executable, otherwise when executing it
+    would lead to an exception. Finally, the CASES_LIST will contain a list of extensions or domains to be used along with the script.
+
+    """
 
 
 @cli.command()
@@ -198,7 +234,7 @@ def add(config_ctx, script):
 @turmyx_config_context
 def remove(config_ctx, script):
     """
-    Removes launch configuration for the given script name.
+    Removes script configuration.
     """
     if config_ctx.remove_section(script):
         click.echo("Script configuration successfully removed!")
