@@ -23,7 +23,7 @@ class TurmyxConfig(ConfigParser):
 
         for section in self.sections():
             if "default" not in section and "editor" in section:
-                if extension in self[section]["extensions"]:
+                if extension in self[section]["extensions"].split(" "):
                     return section
 
         return "editor:default"
@@ -42,7 +42,7 @@ class TurmyxConfig(ConfigParser):
         for section in self.sections():
             if "default" not in section and "opener" in section:
                 print(section)
-                if domain in self[section]["domains"]:
+                if domain in self[section]["domains"].split(" "):
                     return section
 
         return "opener:default"
