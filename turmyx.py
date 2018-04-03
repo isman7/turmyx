@@ -1,4 +1,5 @@
 import os
+import shutil
 import click
 import subprocess
 from configparser import ConfigParser, ExtendedInterpolation
@@ -191,11 +192,12 @@ def opener(config_ctx, url):
 @click.option('--name',
               type=str,
               nargs=1,
+              help='A name for the script configuration, otherwise it will be guessed from script path.'
               )
 @click.option('--default',
               is_flag=True,
-              help='The script will be saved as default one for the given mode, --name and --extensions/--domains '
-                   'would be ignored if this flag is true.'
+              help='The script will be saved as default one for the given mode, --name option and any argument in '
+                   'CASES_LIST would be ignored.'
               )
 @click.argument('script',
                 type=str,
@@ -225,6 +227,39 @@ def add(config_ctx, script, mode, cases_list, name, default):
     would lead to an exception. Finally, the CASES_LIST will contain a list of extensions or domains to be used along with the script.
 
     """
+
+    if mode not in ("opener", "editor"):
+        click.echo("{} is not 'opener' or 'editor' mode.".format(mode))
+        return
+
+    click.echo("Evaluating script: {}".format(script))
+
+    script_path = shutil.which(script)
+
+    if script_path:
+        script_path = os.path.abspath(script_path)
+        click.echo("Absolute path found for script: {}".format(script_path))
+    else:
+        click.echo("Given script not found or not executable.")
+        return
+
+    basename = os.path.basename(script_path)
+
+    if not default:
+        section = "{}:{}".format(mode, name if name else basename)
+    else:
+        section = "{}:default".format(mode)
+
+    config_ctx[section] = {}
+    args_command = [section, "command", script_path]
+    config_ctx.set(*args_command)
+
+    if cases_list and not default:
+        args_cases = [section, "extensions" if mode == "editor" else "domains", ' '.join(cases_list)]
+        config_ctx.set(*args_cases)
+
+    with open(config_ctx.config_path, "w") as config_f:
+        config_ctx.write(config_f)
 
 
 @cli.command()
