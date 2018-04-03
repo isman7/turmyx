@@ -210,6 +210,8 @@ def opener(config_ctx, url):
 @turmyx_config_context
 def add(config_ctx, script, mode, cases_list, name, default):
     """
+    Add a new script configuration.
+
     Examples:
 
         turmyx add editor nano txt md ini
@@ -287,13 +289,4 @@ def remove(config_ctx, script):
             click.echo("Maybe you want to say:\n{}".format(
                 "\n".join(section_guesses)
             ))
-
-
-@cli.command()
-@click.argument('script',
-                type=str,
-                required=True)
-@turmyx_config_context
-def run(config_ctx, script):
-    click.echo("Not implemented yet")
 
