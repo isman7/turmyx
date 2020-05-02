@@ -1,6 +1,6 @@
 # turmyx
 
-turmyx is a script launcher for `Termux` app to link `termux-url-opener` and `termux-url-opener` with custom scripts 
+`turmyx` is a script launcher for [Termux](https://wiki.termux.com/wiki/Main_Page) app to link `termux-url-opener` and `termux-file-editor` with custom scripts 
 and cli programs. 
 
 ## Installation
@@ -8,28 +8,16 @@ and cli programs.
 turmyx is in a early state. If you want to try use it in your Termux, you can follow this minimal installation:
 
 ```
-git clone https://github.com/isman7/turmyx.git
-cd turmyx
-pip install -e .
-```
-
-Notice that `turmyx`, `turmyx-url-opener` and `turmyx-file-editor` would be wide system installed, that commands 
-gently redirect you to `turmyx opener` and `turmyx editor` commands. Also notice that `-e` flag at `pip` command will 
-link the folder to your python distribution, as it calls for "editable" flag.
-
-If you don't want this, you can simple install from git with pip: 
-
-```
 pip install git+https://github.com/isman7/turmyx.git
 ```
 
-After that, you must link Termux launcher scripts to termuyx entry points: 
+After that, you must link Termux launcher scripts to `turmyx` entry points: 
 
 ```
 cd ~
 mkdir bin
-ln -s bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
-ln -s bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
+ln -s $PREFIX/bin/turmyx-url-opener bin/termux-url-opener 
+ln -s $PREFIX/bin/turmyx-file-editor bin/termux-file-editor 
 ```
 
 
