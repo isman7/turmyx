@@ -151,3 +151,15 @@ Options:
 - ~~Additional commands such as: `add`, `remove`, etc to configure scripts from terminal, not only config file.~~
 - Possible output handlers, such as: Termux-api.
 
+
+# New TODO LIST
+- Create docker environment
+- Change INI to YAML
+- Re-structure CLI commands:
+    - Unify `turmyx opener` and `turmyx editor` into `turmyx open`, with `turmyx-open` linked.
+    - Maintain `turmyx-file-editor`, however map to: `turmyx open file`
+    - Maintain `turmyx-url-opener`, however map to: `turmyx open url`
+    - Unify `turmyx add`, `turmyx remove` and `turmyx config` into `turmyx commands` 
+- Add tests
+- Add logger
+     
