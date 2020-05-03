@@ -2,53 +2,10 @@ import os
 import shutil
 import click
 import subprocess
-from configparser import ConfigParser, ExtendedInterpolation
-from urllib.parse import urlparse
 
+from turmyx.config import CfgConfig, TurmyxConfig, CONFIG_FILE, parse_url, parse_path
 
-class TurmyxConfig(ConfigParser):
-    DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-
-    def __init__(self):
-        self.config_path = os.path.join(self.DIR_PATH, "configuration.ini")
-        super(TurmyxConfig, self).__init__(interpolation=ExtendedInterpolation())
-        self.read(self.config_path)
-
-    def guess_file_command(self, file):
-        assert isinstance(file, str)
-        assert isinstance(self, ConfigParser)
-
-        file_name = os.path.basename(file)
-        extension = file_name.split('.')[-1]
-
-        for section in self.sections():
-            if "default" not in section and "editor" in section:
-                if extension in self[section]["extensions"].split(" "):
-                    return section
-
-        return "editor:default"
-
-    def guess_url_command(self, url):
-        assert isinstance(url, str)
-        assert isinstance(self, ConfigParser)
-
-        url_parsed = urlparse(url)
-        domain = url_parsed.netloc
-
-        if not domain:
-            print("Failed to parse URL. Attempt default opener.")
-            return "opener:default"
-
-        for section in self.sections():
-            if "default" not in section and "opener" in section:
-                print(section)
-                if domain in self[section]["domains"].split(" "):
-                    return section
-
-        return "opener:default"
-
-
-turmyx_config_context = click.make_pass_decorator(TurmyxConfig, ensure=True)
+turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
 
 
 @click.group(invoke_without_command=True)
@@ -57,7 +14,7 @@ def cli(config_ctx):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
-    # config_ctx.read(config_ctx.config_path)
+    # config_ctx.read(CONFIG_FILE)
     # click.echo(click.get_current_context().get_help())
     pass
 
@@ -79,7 +36,7 @@ def cli(config_ctx):
                 required=False,
                 )
 @turmyx_config_context
-def config(config_ctx, file, mode, view):
+def config(config_ctx: TurmyxConfig, file, mode, view):
     """
     Set configuration file.
 
@@ -87,37 +44,36 @@ def config(config_ctx, file, mode, view):
     to be called will be the used by the config command.
     """
 
+    config_ctx.load()
+
     if file:
 
-        os.remove(config_ctx.config_path)
+        os.remove(CONFIG_FILE)
 
         abs_path = os.path.abspath(file)
         click.echo("Absolute path for provided file: {}".format(abs_path))
 
-        new_config = TurmyxConfig()
+        new_config = CfgConfig()
         new_config.read(abs_path)
 
         # TODO: validate this config file.
 
         if not mode:
-            with open(config_ctx.config_path, "w") as config_f:
-                new_config.write(config_f)
-            click.echo("Succesfully saved into {}.".format(config_ctx.config_path))
+            new_config.save()
+            click.echo("Succesfully saved into {}.".format(CONFIG_FILE))
         elif mode == "merge":
             # First attempt, only overriding partials:
 
             config_ctx.read(abs_path)
-            with open(config_ctx.config_path, "w") as config_f:
-                config_ctx.write(config_f)
-            click.echo("Succesfully merged: {} \n into: {} \n and saved.".format(abs_path, config_ctx.config_path))
+            config_ctx.save()
+            click.echo("Succesfully merged: {} \n into: {} \n and saved.".format(abs_path, CONFIG_FILE))
 
         elif mode == "symlink":
-            os.symlink(abs_path, config_ctx.config_path)
-            click.echo("Succesfully linked: {} \n to: {}.".format(config_ctx.config_path, abs_path))
+            os.symlink(abs_path, CONFIG_FILE)
+            click.echo("Succesfully linked: {} \n to: {}.".format(CONFIG_FILE, abs_path))
 
     if view:
-        with open(config_ctx.config_path, 'r') as config_f:
-            click.echo(config_f.read())
+        click.echo(CONFIG_FILE.read_text())
 
 
 @cli.command()
@@ -126,7 +82,7 @@ def config(config_ctx, file, mode, view):
                 required=False,
                 )
 @turmyx_config_context
-def editor(config_ctx, file):
+def editor(config_ctx: TurmyxConfig, file: str):
     """
     Run suitable editor for any file in Termux.
 
@@ -134,22 +90,24 @@ def editor(config_ctx, file):
 
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
-    if isinstance(file, str):
-        section = config_ctx.guess_file_command(file)
-        command = config_ctx[section]["command"]
 
-        try:
-            if "command_args" in section:
-                arguments = config_ctx[section]["command_args"]
-                call_args = [command] + arguments.split(" ") + [file]
-            else:
-                call_args = [command, file]
+    config_ctx.load()
 
-            click.echo(" ".join(call_args))
-            subprocess.check_call(call_args)
+    section = config_ctx.guess_file_command(parse_path(file))
+    command = config_ctx[section]["command"]
 
-        except FileNotFoundError:
-            click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+    try:
+        if "command_args" in section:
+            arguments = config_ctx[section]["command_args"]
+            call_args = [command] + arguments.split(" ") + [file]
+        else:
+            call_args = [command, file]
+
+        click.echo(" ".join(call_args))
+        subprocess.check_call(call_args)
+
+    except FileNotFoundError:
+        click.echo("'{}' not found. Please check the any typo or installation.".format(command))
 
 
 @cli.command()
@@ -166,22 +124,24 @@ def opener(config_ctx, url):
 
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
-    if isinstance(url, str):
-        section = config_ctx.guess_url_command(url)
-        command = config_ctx[section]["command"]
 
-        try:
-            if "command_args" in section:
-                arguments = config_ctx[section]["command_args"]
-                call_args = [command] + arguments.split(" ") + [url]
-            else:
-                call_args = [command, url]
+    config_ctx.load()
 
-            click.echo(" ".join(call_args))
-            subprocess.check_call(call_args)
+    section = config_ctx.guess_url_command(parse_url(url))
+    command = config_ctx[section]["command"]
 
-        except FileNotFoundError:
-            click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+    try:
+        if "command_args" in section:
+            arguments = config_ctx[section]["command_args"]
+            call_args = [command] + arguments.split(" ") + [url]
+        else:
+            call_args = [command, url]
+
+        click.echo(" ".join(call_args))
+        subprocess.check_call(call_args)
+
+    except FileNotFoundError:
+        click.echo("'{}' not found. Please check the any typo or installation.".format(command))
 
 
 @cli.command()
@@ -208,7 +168,7 @@ def opener(config_ctx, url):
                 required=False,
                 )
 @turmyx_config_context
-def add(config_ctx, script, mode, cases_list, name, default):
+def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
     """
     Add a new script configuration.
 
@@ -260,8 +220,7 @@ def add(config_ctx, script, mode, cases_list, name, default):
         args_cases = [section, "extensions" if mode == "editor" else "domains", ' '.join(cases_list)]
         config_ctx.set(*args_cases)
 
-    with open(config_ctx.config_path, "w") as config_f:
-        config_ctx.write(config_f)
+    config_ctx.save()
 
 
 @cli.command()
@@ -269,15 +228,17 @@ def add(config_ctx, script, mode, cases_list, name, default):
                 type=str,
                 required=True)
 @turmyx_config_context
-def remove(config_ctx, script):
+def remove(config_ctx: TurmyxConfig, script):
     """
     Removes script configuration.
     """
+
+    config_ctx.load()
+
     if config_ctx.remove_section(script):
         click.echo("Script configuration successfully removed!")
 
-        with open(config_ctx.config_path, 'w') as config_f:
-            config_ctx.write(config_f)
+        config_ctx.save()
     else:
         click.echo("Configuration not found.")
         section_guesses = []
