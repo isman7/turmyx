@@ -1,0 +1,6 @@
+# Additional hosts to be manually resolved during the building of the docker image:
+
+pypi.io
+pypi.org
+files.pythonhosted.org
+its-pointless.github.io
