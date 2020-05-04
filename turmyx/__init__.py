@@ -93,21 +93,13 @@ def editor(config_ctx: TurmyxConfig, file: str):
 
     config_ctx.load()
 
-    section = config_ctx.guess_file_command(parse_path(file))
-    command = config_ctx[section]["command"]
+    command = config_ctx.guess_file_command(parse_path(file))
 
     try:
-        if "command_args" in section:
-            arguments = config_ctx[section]["command_args"]
-            call_args = [command] + arguments.split(" ") + [file]
-        else:
-            call_args = [command, file]
-
-        click.echo(" ".join(call_args))
-        subprocess.check_call(call_args)
-
+        output, errors = command(file).communicate()
+        click.echo(output)
     except FileNotFoundError:
-        click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+        click.echo("'{}' not found. Please check the any typo or installation.".format(command.command))
 
 
 @cli.command()
@@ -127,21 +119,13 @@ def opener(config_ctx, url):
 
     config_ctx.load()
 
-    section = config_ctx.guess_url_command(parse_url(url))
-    command = config_ctx[section]["command"]
+    command = config_ctx.guess_url_command(parse_url(url))
 
     try:
-        if "command_args" in section:
-            arguments = config_ctx[section]["command_args"]
-            call_args = [command] + arguments.split(" ") + [url]
-        else:
-            call_args = [command, url]
-
-        click.echo(" ".join(call_args))
-        subprocess.check_call(call_args)
-
+        output, errors = command(url).communicate()
+        click.echo(output)
     except FileNotFoundError:
-        click.echo("'{}' not found. Please check the any typo or installation.".format(command))
+        click.echo("'{}' not found. Please check the any typo or installation.".format(command.command))
 
 
 @cli.command()
@@ -189,6 +173,8 @@ def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
     would lead to an exception. Finally, the CASES_LIST will contain a list of extensions or domains to be used along with the script.
 
     """
+
+    config_ctx.load()
 
     if mode not in ("opener", "editor"):
         click.echo("{} is not 'opener' or 'editor' mode.".format(mode))

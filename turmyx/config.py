@@ -5,6 +5,9 @@ import abc
 from configparser import ConfigParser, ExtendedInterpolation
 from urllib.parse import urlparse
 
+from subprocess import Popen
+from .commands import Command
+
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 CONFIG_FILE = Path(__file__).parent.absolute() / "configuration.ini"
@@ -21,11 +24,11 @@ def parse_url(url: str) -> str:
 class TurmyxConfig(abc.ABC):
 
     @abc.abstractmethod
-    def guess_file_command(self, extension: str) -> str:
+    def guess_file_command(self, extension: str) -> Command:
         pass
 
     @abc.abstractmethod
-    def guess_url_command(self, domain: str) -> str:
+    def guess_url_command(self, domain: str) -> Command:
         pass
 
     @abc.abstractmethod
@@ -50,19 +53,30 @@ class CfgConfig(ConfigParser, TurmyxConfig):
     def save(self, config_file: Path = CONFIG_FILE):
         self.write(config_file.open("w"))
 
-    def guess_file_command(self, extension) -> str:
+    __map_sub_section = {
+        "editor": "extensions",
+        "opener": "domains"
+    }
+
+    def __get_section_name(self, extension, kind="editor") -> str:
         for section in self.sections():
-            if "default" not in section and "editor" in section:
-                if extension in self[section]["extensions"].split(" "):
+            if "default" not in section and kind in section:
+                if extension in self[section][self.__map_sub_section.get(kind)].split(" "):
                     return section
 
-        return "editor:default"
+        return f"{kind}:default"
 
-    def guess_url_command(self, domain: str) -> str:
-        for section in self.sections():
-            if "default" not in section and "opener" in section:
-                print(section)
-                if domain in self[section]["domains"].split(" "):
-                    return section
+    def __get_command(self, section: str) -> Command:
+        command = self[section]["command"]
+        if "command_args" in section:
+            arguments = self[section]["command_args"]
+            return Command(command, command_args=arguments)
+        return Command(command)
 
-        return "opener:default"
+    def guess_file_command(self, extension: str) -> Command:
+        section = self.__get_section_name(extension)
+        return self.__get_command(section)
+
+    def guess_url_command(self, domain: str) -> Command:
+        section = self.__get_section_name(domain, kind="opener")
+        return self.__get_command(section)
