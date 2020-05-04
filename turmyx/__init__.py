@@ -1,10 +1,11 @@
 import os
-import shutil
+from pathlib import Path
 
 import click
 
 from turmyx.config import CfgConfig, TurmyxConfig, CONFIG_FILE
 from turmyx.utils import parse_path, parse_url
+from turmyx.commands import Command, CommandEntry
 
 turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
 
@@ -94,7 +95,7 @@ def editor(config_ctx: TurmyxConfig, file: str):
 
     config_ctx.load()
 
-    command = config_ctx.guess_file_command(parse_path(file))
+    command: Command = config_ctx.get_file_editor(parse_path(file))
 
     try:
         output, errors = command(file).communicate()
@@ -120,7 +121,7 @@ def opener(config_ctx, url):
 
     config_ctx.load()
 
-    command = config_ctx.guess_url_command(parse_url(url))
+    command: Command = config_ctx.get_url_opener(parse_url(url))
 
     try:
         output, errors = command(url).communicate()
@@ -183,31 +184,26 @@ def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
 
     click.echo("Evaluating script: {}".format(script))
 
-    script_path = shutil.which(script)
+    try:
+        basename = Path(script).name
 
-    if script_path:
-        script_path = os.path.abspath(script_path)
-        click.echo("Absolute path found for script: {}".format(script_path))
-    else:
+        command = CommandEntry(
+            command=script,
+            name=name if name else basename if not default else "default",
+            classes=cases_list,
+        )
+        click.echo("Absolute path found for script: {}".format(command.command))
+
+        if mode == "editor":
+            config_ctx.set_file_editor(command)
+        elif mode == "opener":
+            config_ctx.set_url_opener(command)
+
+        config_ctx.save()
+
+    except FileNotFoundError:
         click.echo("Given script not found or not executable.")
         return
-
-    basename = os.path.basename(script_path)
-
-    if not default:
-        section = "{}:{}".format(mode, name if name else basename)
-    else:
-        section = "{}:default".format(mode)
-
-    config_ctx[section] = {}
-    args_command = [section, "command", script_path]
-    config_ctx.set(*args_command)
-
-    if cases_list and not default:
-        args_cases = [section, "extensions" if mode == "editor" else "domains", ' '.join(cases_list)]
-        config_ctx.set(*args_cases)
-
-    config_ctx.save()
 
 
 @cli.command()
