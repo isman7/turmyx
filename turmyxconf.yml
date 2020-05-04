@@ -1,7 +1,7 @@
 file-editors:
   default:
     command: termux-open
-    args: --choser --view
+    command_args: --choser --view
 
   commands:
     nano:

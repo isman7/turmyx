@@ -1,24 +1,13 @@
-import os
-from pathlib import Path
-from typing import AnyStr
 import abc
+import os
 from configparser import ConfigParser, ExtendedInterpolation
-from urllib.parse import urlparse
+from pathlib import Path
 
-from subprocess import Popen
 from .commands import Command
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-CONFIG_FILE = Path(__file__).parent.absolute() / "configuration.ini"
-
-
-def parse_path(file: str):
-    return Path(file).name.split(".")[-1]
-
-
-def parse_url(url: str) -> str:
-    return urlparse(url).netloc
+CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.ini"
 
 
 class TurmyxConfig(abc.ABC):

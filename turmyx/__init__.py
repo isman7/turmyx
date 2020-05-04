@@ -1,9 +1,10 @@
 import os
 import shutil
-import click
-import subprocess
 
-from turmyx.config import CfgConfig, TurmyxConfig, CONFIG_FILE, parse_url, parse_path
+import click
+
+from turmyx.config import CfgConfig, TurmyxConfig, CONFIG_FILE
+from turmyx.utils import parse_path, parse_url
 
 turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
 
