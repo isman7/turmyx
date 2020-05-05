@@ -1,6 +1,6 @@
 from pathlib import Path
-from dataclasses import dataclass, field
-from typing import List, Union, Optional
+from dataclasses import dataclass, field, asdict
+from typing import List, Union, Optional, Dict
 from subprocess import Popen
 import shutil
 
@@ -31,3 +31,26 @@ class Command(CommandEntry, Popen):
         Popen.__init__(self, args, **kwargs)
         return self
 
+    @classmethod
+    def from_command(cls, command: CommandEntry):
+        return cls(**asdict(command))
+
+
+# TODO use CommandDict only for editors or openers...
+class CommandDict(dict):
+
+    def __init__(self, cfg: Dict[str, Dict[str, dict]]):
+        self.default = CommandEntry(name="default", **cfg.get("default"))
+        editors = cfg.get("commands")
+        super(CommandDict, self).__init__((n, CommandEntry(name=n, **d)) for n, d in editors.items())
+
+        # default_opener = cfg.get("url-openers").get("default")
+
+    def __getitem__(self, item: str) -> CommandEntry:
+        super(CommandDict, self).__getitem__(item)
+
+    def __repr__(self):
+        return f"""
+        {super(CommandDict, self).__repr__()}
+        default: {self.default.command}
+        """

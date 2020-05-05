@@ -3,11 +3,12 @@ from pathlib import Path
 
 import click
 
-from turmyx.config import CfgConfig, TurmyxConfig, CONFIG_FILE
+from turmyx.config import CfgConfig, YAMLConfig, TurmyxConfig, CONFIG_FILE
 from turmyx.utils import parse_path, parse_url
 from turmyx.commands import Command, CommandEntry
 
-turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
+# turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
+turmyx_config_context = click.make_pass_decorator(YAMLConfig, ensure=True)
 
 
 @click.group(invoke_without_command=True)

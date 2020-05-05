@@ -1,6 +1,6 @@
 file-editors:
   default:
-    command: termux-open
+    command: xdg-open
     command_args: --choser --view
 
   commands:

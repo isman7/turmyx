@@ -4,7 +4,8 @@ import os
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import Path
 
-from turmyx.commands import Command, CommandEntry
+import yaml
+from turmyx.commands import Command, CommandEntry, CommandDict
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -110,3 +111,57 @@ class CfgConfig(ConfigParser, TurmyxConfig):
 
     def remove_url_opener(self, command_name: str) -> 'CfgConfig':
         return self.__remove_command(command_name, kind="opener")
+
+
+class YAMLConfig(TurmyxConfig):
+
+    m = {'command': 'command', 'command_args': 'args', 'extensions': 'classes'}
+    m2 = {'command': 'command', 'command_args': 'args', 'domains': 'classes'}
+
+    def __init__(self):
+
+        self.file_editors = None
+        self.url_openers = None
+
+    def load(self, config_file: Path = CONFIG_FILE) -> 'YAMLConfig':
+        with config_file.open() as cf:
+            yml_data = yaml.load(cf)
+
+        editors = yml_data.get("file-editors")
+        editors["default"] = dict((self.m[k], v) for k, v in editors["default"].items())
+        editors["commands"] = {
+            k2: dict((self.m[k], v) for k, v in v2.items()) for k2, v2 in editors["commands"].items()
+        }
+
+        self.file_editors = CommandDict(editors)
+
+        openers = yml_data.get("url-openers")
+        openers["default"] = dict((self.m[k], v) for k, v in editors["default"].items())
+        openers["commands"] = {
+            k2: dict((self.m2[k], v) for k, v in v2.items()) for k2, v2 in editors["commands"].items()
+        }
+
+        self.url_openers = CommandDict(openers)
+
+        return self
+
+    def save(self, config_file: Path = CONFIG_FILE):
+        pass
+
+    def get_file_editor(self, extension: str) -> Command:
+        pass
+
+    def get_url_opener(self, domain: str) -> Command:
+        pass
+
+    def set_file_editor(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
+        pass
+
+    def set_url_opener(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
+        pass
+
+    def remove_file_editor(self, command_name: str) -> 'TurmyxConfig':
+        pass
+
+    def remove_url_opener(self, command_name: str) -> 'TurmyxConfig':
+        pass
