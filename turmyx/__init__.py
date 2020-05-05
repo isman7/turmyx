@@ -110,7 +110,7 @@ def editor(config_ctx: TurmyxConfig, file: str):
                 required=False,
                 )
 @turmyx_config_context
-def opener(config_ctx, url):
+def opener(config_ctx: TurmyxConfig, url):
     """
     Run suitable parser for any url in Termux.
 
@@ -176,11 +176,11 @@ def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
 
     """
 
-    config_ctx.load()
-
     if mode not in ("opener", "editor"):
         click.echo("{} is not 'opener' or 'editor' mode.".format(mode))
         return
+
+    config_ctx.load()
 
     click.echo("Evaluating script: {}".format(script))
 
@@ -207,18 +207,28 @@ def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
 
 
 @cli.command()
+@click.argument('mode',
+                type=str,
+                nargs=1,
+                )
 @click.argument('script',
                 type=str,
                 required=True)
 @turmyx_config_context
-def remove(config_ctx: TurmyxConfig, script):
+def remove(config_ctx: TurmyxConfig, mode, script):
     """
     Removes script configuration.
     """
 
+    if mode not in ("opener", "editor"):
+        click.echo("{} is not 'opener' or 'editor' mode.".format(mode))
+        return
+
     config_ctx.load()
 
-    if config_ctx.remove_section(script):
+    section = f"{mode}:{script}"
+
+    if config_ctx.remove_section(section):
         click.echo("Script configuration successfully removed!")
 
         config_ctx.save()
