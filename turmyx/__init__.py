@@ -226,21 +226,26 @@ def remove(config_ctx: TurmyxConfig, mode, script):
 
     config_ctx.load()
 
-    section = f"{mode}:{script}"
-
-    if config_ctx.remove_section(section):
-        click.echo("Script configuration successfully removed!")
+    try:
+        if mode == "editor":
+            config_ctx.remove_file_editor(script)
+        elif mode == "opener":
+            config_ctx.remove_url_opener(script)
 
         config_ctx.save()
-    else:
-        click.echo("Configuration not found.")
-        section_guesses = []
-        for section in config_ctx.sections():
-            if script in section:
-                section_guesses.append(section)
 
-        if section_guesses:
-            click.echo("Maybe you want to say:\n{}".format(
-                "\n".join(section_guesses)
-            ))
+        click.echo("Script configuration successfully removed!")
+
+    except ValueError:
+        click.echo("Configuration not found.")
+        # section_guesses = []
+        # for section in config_ctx.sections():
+        #     if script in section:
+        #         section_guesses.append(section)
+        #
+        # if section_guesses:
+        #     click.echo("Maybe you want to say:\n{}".format(
+        #         "\n".join(section_guesses)
+        #     ))
+
 

@@ -1,44 +1,51 @@
 from typing import List, Union
-import abc
+from abc import ABC, abstractmethod
 import os
 from configparser import ConfigParser, ExtendedInterpolation
 from pathlib import Path
 
-from .commands import Command, CommandEntry
+from turmyx.commands import Command, CommandEntry
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.ini"
 
 
-class TurmyxConfig(abc.ABC):
+class TurmyxConfig(ABC):
 
     get_classes_name = staticmethod(dict(editor="extensions", opener="domains").get)
 
-    @abc.abstractmethod
+    @abstractmethod
     def load(self, config_file: Path = CONFIG_FILE) -> 'TurmyxConfig':
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def save(self, config_file: Path = CONFIG_FILE):
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_file_editor(self, extension: str) -> Command:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_url_opener(self, domain: str) -> Command:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_file_editor(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def set_url_opener(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
         pass
 
+    @abstractmethod
+    def remove_file_editor(self, command_name: str) -> 'TurmyxConfig':
+        pass
+
+    @abstractmethod
+    def remove_url_opener(self, command_name: str) -> 'TurmyxConfig':
+        pass
 
 
 class CfgConfig(ConfigParser, TurmyxConfig):
@@ -91,3 +98,15 @@ class CfgConfig(ConfigParser, TurmyxConfig):
 
     def set_url_opener(self, command: Union[Command, CommandEntry]) -> 'CfgConfig':
         return self.__set_command(command, kind="opener")
+
+    def __remove_command(self, command_name: str, kind: str = "editor") -> 'CfgConfig':
+        if self.remove_section(f"{kind}:{command_name}"):
+            return self
+        else:
+            raise ValueError("Command not found in config file.")
+
+    def remove_file_editor(self, command_name: str) -> 'CfgConfig':
+        return self.__remove_command(command_name)
+
+    def remove_url_opener(self, command_name: str) -> 'CfgConfig':
+        return self.__remove_command(command_name, kind="opener")
