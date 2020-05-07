@@ -1,8 +1,10 @@
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
-from typing import List, Union, Optional, Dict
+from typing import List, Union, Optional, Dict, Any
 from subprocess import Popen
 import shutil
+
+CommandDictType = Dict[str, Dict[str, Union[str, Dict[str, Any]]]]
 
 
 @dataclass
@@ -18,6 +20,14 @@ class CommandEntry:
             assert self.command
         except AssertionError:
             raise FileNotFoundError("Given command or script not found or not executable.")
+
+        if isinstance(self.classes, str):
+            self.classes = self.classes.split(" ")
+
+    def as_dict(self) -> Dict[str, str]:
+        d = asdict(self)
+        d["classes"] = " ".join(d.get("classes"))
+        return d
 
 
 class Command(CommandEntry, Popen):
@@ -36,21 +46,42 @@ class Command(CommandEntry, Popen):
         return cls(**asdict(command))
 
 
-# TODO use CommandDict only for editors or openers...
 class CommandDict(dict):
 
     def __init__(self, cfg: Dict[str, Dict[str, dict]]):
         self.default = CommandEntry(name="default", **cfg.get("default"))
-        editors = cfg.get("commands")
-        super(CommandDict, self).__init__((n, CommandEntry(name=n, **d)) for n, d in editors.items())
+        commands = cfg.get("commands")
+        super(CommandDict, self).__init__((n, CommandEntry(name=n, **d)) for n, d in commands.items())
+        self.update(default=self.default)
 
-        # default_opener = cfg.get("url-openers").get("default")
+    def __getitem__(self, item: str) -> 'CommandEntry':
+        if item == "default":
+            return self.default
+        return super(CommandDict, self).__getitem__(item)
 
-    def __getitem__(self, item: str) -> CommandEntry:
-        super(CommandDict, self).__getitem__(item)
+    def __setitem__(self, key, value):
+        assert isinstance(value, CommandEntry)
+        super(CommandDict, self).__setitem__(key, value)
+
+    def get(self, k) -> 'CommandEntry':
+        return super(CommandDict, self).get(k, self.default)
+
+    def pop(self, k) -> 'CommandEntry':
+        return super(CommandDict, self).pop(k, self.default)
 
     def __repr__(self):
+        self_commands = "\n\t".join(f"{n}: {c}" for n, c in self.items())
         return f"""
-        {super(CommandDict, self).__repr__()}
-        default: {self.default.command}
-        """
+List of commands:
+    {self_commands}
+"""
+
+    def as_dict(self) -> 'CommandDictType':
+        d = dict(self)
+        for name, command in d.items():
+            d[name] = command.as_dict()
+            d[name].pop("name")
+        default = d.pop("default")
+        default.pop("classes")
+        return dict(default=default, commands=d)
+

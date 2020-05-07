@@ -1,7 +1,7 @@
 file-editors:
   default:
-    command: xdg-open
-    command_args: --choser --view
+    command: termux-open
+    args: --choser --view
 
   commands:
     nano:

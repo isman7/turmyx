@@ -7,7 +7,7 @@ from turmyx.config import CfgConfig, YAMLConfig, TurmyxConfig, CONFIG_FILE
 from turmyx.utils import parse_path, parse_url
 from turmyx.commands import Command, CommandEntry
 
-# turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
+turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
 turmyx_config_context = click.make_pass_decorator(YAMLConfig, ensure=True)
 
 
@@ -67,7 +67,7 @@ def config(config_ctx: TurmyxConfig, file, mode, view):
         elif mode == "merge":
             # First attempt, only overriding partials:
 
-            config_ctx.read(abs_path)
+            config_ctx.load(abs_path)
             config_ctx.save()
             click.echo("Succesfully merged: {} \n into: {} \n and saved.".format(abs_path, CONFIG_FILE))
 
