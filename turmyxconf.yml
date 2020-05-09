@@ -1,0 +1,26 @@
+file-editors:
+  default:
+    command: termux-open
+    args: --choser --view
+
+  commands:
+    nano:
+      command: nano
+      extensions: txt md conf
+
+    vim:
+      command: vim
+      extensions:
+        - py
+        - java
+
+url-openers:
+  default:
+    command: termux-open-url
+
+  commands:
+    youtube:
+      command: youtube-dl
+      domains:
+        - youtube.com
+        - youtu.be

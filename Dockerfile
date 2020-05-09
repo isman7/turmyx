@@ -11,7 +11,9 @@ RUN curl -LO https://its-pointless.github.io/setup-pointless-repo.sh && \
     rm setup-pointless-repo.sh && \
     pkg update -y
 
-RUN pkg install -y python git nano scipy numpy && pip install ipython
+RUN pkg install -y python git nano scipy numpy
+
+RUN pip install ipython
 
 RUN pip install youtube-dl
 
@@ -20,5 +22,3 @@ WORKDIR turmyx
 
 COPY . .
 RUN pip install .
-
-#ENTRYPOINT turmyx
