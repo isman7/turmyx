@@ -7,12 +7,6 @@ from turmyx.commands import Command, CommandEntry
 from turmyx.config import TurmyxConfig, CfgConfig, YAMLConfig
 from turmyx.utils import parse_extension, parse_domain
 
-turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
-turmyx_config_context = click.make_pass_decorator(YAMLConfig, ensure=True)
-
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-
-# CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.ini"
 CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
 
 

@@ -1,8 +1,8 @@
-from pathlib import Path
 from dataclasses import dataclass, field, asdict
-from typing import List, Union, Optional, Dict, Any
-from subprocess import Popen
 import shutil
+from dataclasses import dataclass, field, asdict
+from subprocess import Popen
+from typing import List, Union, Dict, Any
 
 CommandDictType = Dict[str, Dict[str, Union[str, Dict[str, Any]]]]
 

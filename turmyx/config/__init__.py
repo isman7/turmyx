@@ -1,12 +1,11 @@
-from typing import Union, Optional
-import os
 from configparser import ConfigParser, ExtendedInterpolation, SectionProxy
 from pathlib import Path
+from typing import Union, Optional
 
 import yaml
 
-from turmyx.config.abstract import TurmyxConfig
 from turmyx.commands import Command, CommandEntry, CommandDict, CommandDictType
+from turmyx.config.abstract import TurmyxConfig
 
 
 class CfgConfig(ConfigParser, TurmyxConfig):
