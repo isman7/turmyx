@@ -5,9 +5,9 @@ import click
 
 from turmyx.commands import CommandEntry
 from turmyx.config import TurmyxConfig, CfgConfig, YAMLConfig
-from turmyx.utils import parse_extension
+from turmyx.utils import parse_path
 
-from turmyx.open import editor, opener
+from turmyx.open import editor, opener, turmyx_open
 
 CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
 
@@ -30,7 +30,7 @@ def cli(ctx: click.Context, file):
     else:
         config_file = CONFIG_FILE
 
-    config_extension = parse_extension(config_file)
+    config_extension = parse_path(config_file)
 
     if config_extension in ("ini", "cfg"):
         config = CfgConfig()
@@ -96,8 +96,9 @@ def config(config_ctx: TurmyxConfig, file, mode, view):
         click.echo(config_ctx.config_file.read_text())
 
 
-cli.add_command(editor)
-cli.add_command(opener)
+# cli.add_command(editor)
+# cli.add_command(opener)
+cli.add_command(turmyx_open)
 
 
 @cli.command()
