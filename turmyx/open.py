@@ -1,8 +1,23 @@
+from pathlib import Path
+from functools import update_wrapper
+
 import click
 
-from turmyx.config import TurmyxConfig
 from turmyx.commands import Command
+from turmyx.config import TurmyxConfig, YAMLConfig
 from turmyx.utils import parse_path, parse_url
+
+CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
+
+
+def pass_config(f):
+    @click.pass_obj
+    def wrapper(config_ctx: TurmyxConfig, *args, **kwargs):
+        if config_ctx is None:
+            config_ctx = YAMLConfig().load(CONFIG_FILE)
+        return f(config_ctx, *args, **kwargs)
+
+    return update_wrapper(wrapper, f)
 
 
 @click.group(
@@ -21,7 +36,7 @@ def turmyx_open(config_ctx: TurmyxConfig):
 @click.argument('file',
                 type=click.Path(exists=True),
                 )
-@click.pass_obj
+@pass_config
 def editor(config_ctx: TurmyxConfig, file: str):
     """
     Run suitable editor for any file in Termux.
@@ -41,7 +56,7 @@ def editor(config_ctx: TurmyxConfig, file: str):
                 type=str,
                 required=False,
                 )
-@click.pass_obj
+@pass_config
 def opener(config_ctx: TurmyxConfig, url):
     """
     Run suitable parser for any url in Termux.
