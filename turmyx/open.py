@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import click
 
 from turmyx.commands import Command
@@ -24,7 +27,7 @@ def turmyx_open(config_ctx: TurmyxConfig):
 @pass_config
 def editor(config_ctx: TurmyxConfig, file: str):
     """
-    Run suitable editor for any file in Termux.
+    Open a file inside termux the user's preferred application.
     """
 
     command: Command = config_ctx.get_file_editor(parse_path(file))
@@ -44,7 +47,7 @@ def editor(config_ctx: TurmyxConfig, file: str):
 @pass_config
 def opener(config_ctx: TurmyxConfig, url):
     """
-    Run suitable parser for any url in Termux.
+    Open an URL inside termux the user's preferred application.
     """
 
     command: Command = config_ctx.get_url_opener(parse_url(url))
@@ -54,3 +57,29 @@ def opener(config_ctx: TurmyxConfig, url):
         click.echo(output)
     except FileNotFoundError:
         click.echo("'{}' not found. Please check the any typo or installation.".format(command.command))
+
+
+@turmyx_open.command("install")
+def install():
+    """
+    Link `turmyx open file` and `turmyx open url` commands to termux.
+
+    The links will be as follow, using the short-cut scripts:
+
+         $PREFIX/bin/turmyx-open → ~/bin/termux-file-editor
+         $PREFIX/bin/turmyx-open-url → ~/bin/termux-url-opener
+
+    """
+
+    prefix = Path(os.environ.get("PREFIX"))
+    home = Path(os.environ.get("HOME"))
+
+    assert prefix.exists() and home.exists()
+
+    os.symlink(prefix / "bin" / "turmyx-open", home / "bin" / "termux-file-editor")
+    os.symlink(prefix / "bin" / "turmyx-open-url", home / "bin" / "termux-url-opener")
+
+
+
+
+
