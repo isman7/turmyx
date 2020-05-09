@@ -22,7 +22,7 @@ CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
               required=False,
               default=CONFIG_FILE)
 @click.pass_context
-def cli(ctx: click.Context, file, version):
+def cli(ctx: click.Context, file):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
