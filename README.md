@@ -147,19 +147,20 @@ Options:
 
 - ~~config argument to turmyx main command.~~ config command!
 - ~~A url parser to be able to differ domains.~~ urlib.parse!
-- More than one parser/editor per url/file. With CLI input to choose.
 - ~~Additional commands such as: `add`, `remove`, etc to configure scripts from terminal, not only config file.~~
-- Possible output handlers, such as: Termux-api.
-
-
-# New TODO LIST
-- Create docker environment
-- Change INI to YAML
+- ~~Create docker environment~~
+- ~~Change INI to YAML~~, well both are supported now. 
 - Re-structure CLI commands:
     - Unify `turmyx opener` and `turmyx editor` into `turmyx open`, with `turmyx-open` linked.
     - Maintain `turmyx-file-editor`, however map to: `turmyx open file`
     - Maintain `turmyx-url-opener`, however map to: `turmyx open url`
-    - Unify `turmyx add`, `turmyx remove` and `turmyx config` into `turmyx commands` 
+    - Unify `turmyx add`, `turmyx remove` and `turmyx config --view` into `turmyx scripts`
+    - Create a `turmyx -f FILE_PATH --commit` flag that enables saving values from a given config file to the system
+     one. Also port here the soft-link feature. 
 - Add tests
 - Add logger
+- More than one parser/editor per url/file. With CLI input to choose.
+- Parse Termux-api ?
+- Pipelines ? 
+
      
