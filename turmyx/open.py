@@ -1,23 +1,8 @@
-from pathlib import Path
-from functools import update_wrapper
-
 import click
 
 from turmyx.commands import Command
-from turmyx.config import TurmyxConfig, YAMLConfig
+from turmyx.config import TurmyxConfig, pass_config
 from turmyx.utils import parse_path, parse_url
-
-CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
-
-
-def pass_config(f):
-    @click.pass_obj
-    def wrapper(config_ctx: TurmyxConfig, *args, **kwargs):
-        if config_ctx is None:
-            config_ctx = YAMLConfig().load(CONFIG_FILE)
-        return f(config_ctx, *args, **kwargs)
-
-    return update_wrapper(wrapper, f)
 
 
 @click.group(

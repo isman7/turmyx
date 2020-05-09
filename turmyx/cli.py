@@ -4,19 +4,16 @@ from pathlib import Path
 import click
 
 from turmyx.commands import CommandEntry
-from turmyx.config import TurmyxConfig, CfgConfig, YAMLConfig
+from turmyx.config import TurmyxConfig, CfgConfig, YAMLConfig, pass_config
 from turmyx.utils import parse_path
 
-from turmyx.open import editor, opener, turmyx_open
-
-CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
+from turmyx.open import turmyx_open
 
 
 @click.group()
 @click.option('-f', '--file',
               help='Input a different configuration file, rather than global one.',
-              required=False,
-              default=CONFIG_FILE)
+              required=False,)
 @click.pass_context
 def cli(ctx: click.Context, file):
     """
@@ -27,18 +24,20 @@ def cli(ctx: click.Context, file):
         config_file = file
         config_file = Path(config_file)
         assert config_file.exists()
+
+        config_extension = parse_path(config_file)
+
+        if config_extension in ("ini", "cfg"):
+            config = CfgConfig()
+        elif config_extension in ("yml", "yaml"):
+            config = YAMLConfig()
+
+        ctx.obj = config.load(config_file)
+        click.echo(f"Successfully loaded configuration from: {config_file}")
+
     else:
-        config_file = CONFIG_FILE
-
-    config_extension = parse_path(config_file)
-
-    if config_extension in ("ini", "cfg"):
-        config = CfgConfig()
-    elif config_extension in ("yml", "yaml"):
-        config = YAMLConfig()
-
-    ctx.obj = config.load(config_file)
-    click.echo(f"Successfully loaded configuration from: {config_file}")
+        print(YAMLConfig().config_file)
+        ctx.obj = YAMLConfig().load()
 
 
 @cli.command()
@@ -57,7 +56,7 @@ def cli(ctx: click.Context, file):
                 type=click.Path(exists=True),
                 required=False,
                 )
-@click.pass_obj
+@pass_config
 def config(config_ctx: TurmyxConfig, file, mode, view):
     """
     Set configuration file.
@@ -124,7 +123,7 @@ cli.add_command(turmyx_open)
                 nargs=-1,
                 required=False,
                 )
-@click.pass_obj
+@pass_config
 def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
     """
     Add a new script configuration.
@@ -183,7 +182,7 @@ def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
 @click.argument('script',
                 type=str,
                 required=True)
-@click.pass_obj
+@pass_config
 def remove(config_ctx: TurmyxConfig, mode, script):
     """
     Removes script configuration.

@@ -5,13 +5,16 @@ from typing import Union, Optional
 from turmyx.commands import Command, CommandEntry
 
 
+CONFIG_FILE = Path(__file__).parent.parent.parent.absolute() / "turmyxconf.yml"
+
+
 class TurmyxConfig(ABC):
 
-    def __init__(self, config_file: Optional[Path] = None):
+    def __init__(self, config_file: Optional[Path] = CONFIG_FILE):
         self.config_file = config_file
 
     @abstractmethod
-    def load(self, config_file: Path) -> 'TurmyxConfig':
+    def load(self, config_file: Optional[Path] = None) -> 'TurmyxConfig':
         pass
 
     @abstractmethod
