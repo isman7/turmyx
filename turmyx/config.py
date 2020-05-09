@@ -1,7 +1,7 @@
 from typing import List, Union, Dict
 from abc import ABC, abstractmethod
 import os
-from configparser import ConfigParser, ExtendedInterpolation
+from configparser import ConfigParser, ExtendedInterpolation, SectionProxy
 from pathlib import Path
 
 import yaml
@@ -9,7 +9,8 @@ from turmyx.commands import Command, CommandEntry, CommandDict, CommandDictType
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
+CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.ini"
+# CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
 
 
 class TurmyxConfig(ABC):
@@ -62,27 +63,28 @@ class CfgConfig(ConfigParser, TurmyxConfig):
     def save(self, config_file: Path = CONFIG_FILE):
         self.write(config_file.open("w"))
 
-    def __get_section_name(self, extension, kind="file-editors") -> str:
+    def __get_section(self, section_kind: str, class_kind: str, class_name: str) -> 'SectionProxy':
         for section in self.sections():
-            if "default" not in section and kind in section:
-                if extension in self[section][self.classes_name.get(kind)].split(" "):
-                    return section
+            if "default" not in section and section_kind in section:
+                if class_name in self[section][class_kind].split(" "):
+                    return self[section]
 
-        return f"{kind}:default"
+        return self[f"{section_kind}:default"]
 
-    def __get_command(self, section: str, kind="file-editors") -> Command:
-        command = self[section]["command"]
-        arguments = self[section]["args"] if "args" in section else ""
-        classes = self[section][self.classes_name.get(kind)].split(" ")
-        return Command(command, args=arguments, classes=classes, name=section.split(":")[0])
+    def __get_command(self, section_kind: str, class_kind: str, class_name: str) -> Command:
+        section = self.__get_section(section_kind, class_kind, class_name)
+        return Command(
+            command=section["command"],
+            args=section["args"] if "args" in section else "",
+            classes=section[class_kind].split(" ") if class_kind in section else [],
+            name=section.name.split(":")[0]
+        )
 
     def get_file_editor(self, extension: str) -> Command:
-        section = self.__get_section_name(extension)
-        return self.__get_command(section)
+        return self.__get_command("file-editors", "extensions", extension)
 
     def get_url_opener(self, domain: str) -> Command:
-        section = self.__get_section_name(domain, kind="opener")
-        return self.__get_command(section, kind="opener")
+        return self.__get_command("url-openers", "domains", domain)
 
     def __set_command(self, command: Union[Command, CommandEntry], kind: str = "file-editors"):
         name = command.name if command.name else Path(command.command).name
@@ -110,7 +112,7 @@ class CfgConfig(ConfigParser, TurmyxConfig):
         return self.__remove_command(command_name)
 
     def remove_url_opener(self, command_name: str) -> 'CfgConfig':
-        return self.__remove_command(command_name, kind="opener")
+        return self.__remove_command(command_name, kind="url-openers")
 
 
 class YAMLConfig(TurmyxConfig):
@@ -155,11 +157,21 @@ class YAMLConfig(TurmyxConfig):
         with config_file.open("w") as cf:
             yaml.dump(yml_data, cf, indent=4, allow_unicode=True)
 
+    @staticmethod
+    def __get_command(commands: 'CommandDict', class_name: str) -> 'Command':
+        all_classes = set(c for command in commands.values() for c in command.classes)
+        if class_name in all_classes:
+            for command in commands.values():
+                if class_name in command.classes:
+                    return Command.from_command(command)
+        else:
+            return Command.from_command(commands.default)
+
     def get_file_editor(self, extension: str) -> Command:
-        pass
+        return self.__get_command(self.file_editors, extension)
 
     def get_url_opener(self, domain: str) -> Command:
-        pass
+        return self.__get_command(self.url_openers, domain)
 
     def set_file_editor(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
         self.file_editors[command.name] = command
