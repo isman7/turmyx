@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Optional
 
-from turmyx import Command, CommandEntry
+from turmyx.commands import Command, CommandEntry
 
 
 class TurmyxConfig(ABC):
