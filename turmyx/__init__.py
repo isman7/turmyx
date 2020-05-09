@@ -3,23 +3,46 @@ from pathlib import Path
 
 import click
 
-from turmyx.config import CfgConfig, YAMLConfig, TurmyxConfig, CONFIG_FILE
-from turmyx.utils import parse_path, parse_url
 from turmyx.commands import Command, CommandEntry
+from turmyx.config import TurmyxConfig, CfgConfig, YAMLConfig
+from turmyx.utils import parse_extension, parse_domain
 
 turmyx_config_context = click.make_pass_decorator(CfgConfig, ensure=True)
-# turmyx_config_context = click.make_pass_decorator(YAMLConfig, ensure=True)
+turmyx_config_context = click.make_pass_decorator(YAMLConfig, ensure=True)
+
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+
+# CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.ini"
+CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
 
 
-@click.group(invoke_without_command=True)
-@turmyx_config_context
-def cli(config_ctx):
+@click.group()
+@click.option('-f', '--file',
+              help='Input a different configuration file, rather than global one.',
+              required=False,
+              default=CONFIG_FILE)
+@click.pass_context
+def cli(ctx: click.Context, file, version):
     """
     This is turmyx! A script launcher for external files/url in Termux. Enjoy!
     """
-    # config_ctx.read(CONFIG_FILE)
-    # click.echo(click.get_current_context().get_help())
-    pass
+
+    if file:
+        config_file = file
+        config_file = Path(config_file)
+        assert config_file.exists()
+    else:
+        config_file = CONFIG_FILE
+
+    config_extension = parse_extension(config_file)
+
+    if config_extension in ("ini", "cfg"):
+        config = CfgConfig()
+    elif config_extension in ("yml", "yaml"):
+        config = YAMLConfig()
+
+    ctx.obj = config.load(config_file)
+    click.echo(f"Successfully loaded configuration from: {config_file}")
 
 
 @cli.command()
@@ -38,7 +61,7 @@ def cli(config_ctx):
                 type=click.Path(exists=True),
                 required=False,
                 )
-@turmyx_config_context
+@click.pass_obj
 def config(config_ctx: TurmyxConfig, file, mode, view):
     """
     Set configuration file.
@@ -46,8 +69,6 @@ def config(config_ctx: TurmyxConfig, file, mode, view):
     You can use a mode flag to configure how to save the new configuration. Both can't be combined, so the last one
     to be called will be the used by the config command.
     """
-
-    config_ctx.load()
 
     if file:
 
@@ -76,7 +97,7 @@ def config(config_ctx: TurmyxConfig, file, mode, view):
             click.echo("Succesfully linked: {} \n to: {}.".format(CONFIG_FILE, abs_path))
 
     if view:
-        click.echo(CONFIG_FILE.read_text())
+        click.echo(config_ctx.config_file.read_text())
 
 
 @cli.command()
@@ -84,7 +105,7 @@ def config(config_ctx: TurmyxConfig, file, mode, view):
                 type=click.Path(exists=True),
                 required=False,
                 )
-@turmyx_config_context
+@click.pass_obj
 def editor(config_ctx: TurmyxConfig, file: str):
     """
     Run suitable editor for any file in Termux.
@@ -94,9 +115,7 @@ def editor(config_ctx: TurmyxConfig, file: str):
     ln -s ~/bin/termux-file-editor $PREFIX/bin/turmyx-file-editor
     """
 
-    config_ctx.load()
-
-    command: Command = config_ctx.get_file_editor(parse_path(file))
+    command: Command = config_ctx.get_file_editor(parse_extension(file))
 
     try:
         output, errors = command(file).communicate()
@@ -110,7 +129,7 @@ def editor(config_ctx: TurmyxConfig, file: str):
                 type=str,
                 required=False,
                 )
-@turmyx_config_context
+@click.pass_obj
 def opener(config_ctx: TurmyxConfig, url):
     """
     Run suitable parser for any url in Termux.
@@ -120,9 +139,7 @@ def opener(config_ctx: TurmyxConfig, url):
     ln -s ~/bin/termux-url-opener $PREFIX/bin/turmyx-url-opener
     """
 
-    config_ctx.load()
-
-    command: Command = config_ctx.get_url_opener(parse_url(url))
+    command: Command = config_ctx.get_url_opener(parse_domain(url))
 
     try:
         output, errors = command(url).communicate()
@@ -154,7 +171,7 @@ def opener(config_ctx: TurmyxConfig, url):
                 nargs=-1,
                 required=False,
                 )
-@turmyx_config_context
+@click.pass_obj
 def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
     """
     Add a new script configuration.
@@ -180,8 +197,6 @@ def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
     if mode not in ("opener", "editor"):
         click.echo("{} is not 'opener' or 'editor' mode.".format(mode))
         return
-
-    config_ctx.load()
 
     click.echo("Evaluating script: {}".format(script))
 
@@ -215,7 +230,7 @@ def add(config_ctx: TurmyxConfig, script, mode, cases_list, name, default):
 @click.argument('script',
                 type=str,
                 required=True)
-@turmyx_config_context
+@click.pass_obj
 def remove(config_ctx: TurmyxConfig, mode, script):
     """
     Removes script configuration.
@@ -224,8 +239,6 @@ def remove(config_ctx: TurmyxConfig, mode, script):
     if mode not in ("opener", "editor"):
         click.echo("{} is not 'opener' or 'editor' mode.".format(mode))
         return
-
-    config_ctx.load()
 
     try:
         if mode == "editor":

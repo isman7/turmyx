@@ -1,66 +1,26 @@
-from typing import List, Union, Dict
-from abc import ABC, abstractmethod
+from typing import Union, Optional
 import os
 from configparser import ConfigParser, ExtendedInterpolation, SectionProxy
 from pathlib import Path
 
 import yaml
+
+from turmyx.config.abstract import TurmyxConfig
 from turmyx.commands import Command, CommandEntry, CommandDict, CommandDictType
-
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-
-CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.ini"
-# CONFIG_FILE = Path(__file__).parent.parent.absolute() / "turmyxconf.yml"
-
-
-class TurmyxConfig(ABC):
-
-    classes_name = {"file-editors": "extensions", "url-openers": "domains"}
-
-    @abstractmethod
-    def load(self, config_file: Path = CONFIG_FILE) -> 'TurmyxConfig':
-        pass
-
-    @abstractmethod
-    def save(self, config_file: Path = CONFIG_FILE):
-        pass
-
-    @abstractmethod
-    def get_file_editor(self, extension: str) -> Command:
-        pass
-
-    @abstractmethod
-    def get_url_opener(self, domain: str) -> Command:
-        pass
-
-    @abstractmethod
-    def set_file_editor(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
-        pass
-
-    @abstractmethod
-    def set_url_opener(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
-        pass
-
-    @abstractmethod
-    def remove_file_editor(self, command_name: str) -> 'TurmyxConfig':
-        pass
-
-    @abstractmethod
-    def remove_url_opener(self, command_name: str) -> 'TurmyxConfig':
-        pass
 
 
 class CfgConfig(ConfigParser, TurmyxConfig):
     def __init__(self):
-        self.__config_file_path = None
         super(CfgConfig, self).__init__(interpolation=ExtendedInterpolation())
 
-    def load(self, config_file: Path = CONFIG_FILE) -> 'CfgConfig':
-        self.__config_file_path = config_file
+    def load(self, config_file: Path) -> 'CfgConfig':
+        self.config_file = config_file
         self.read(config_file.as_posix())
         return self
 
-    def save(self, config_file: Path = CONFIG_FILE):
+    def save(self, config_file: Optional[Path] = None):
+        if config_file is None:
+            config_file = self.config_file
         self.write(config_file.open("w"))
 
     def __get_section(self, section_kind: str, class_kind: str, class_name: str) -> 'SectionProxy':
@@ -118,13 +78,14 @@ class CfgConfig(ConfigParser, TurmyxConfig):
 class YAMLConfig(TurmyxConfig):
 
     def __init__(self):
-
         self.file_editors = None
         self.url_openers = None
+        super(YAMLConfig, self).__init__()
 
-    def load(self, config_file: Path = CONFIG_FILE) -> 'YAMLConfig':
+    def load(self, config_file: Path) -> 'YAMLConfig':
+        self.config_file = config_file
         with config_file.open() as cf:
-            yml_data = yaml.load(cf)
+            yml_data = yaml.load(cf, Loader=yaml.FullLoader)
 
         editors: CommandDictType = yml_data.get("file-editors")
         for d in editors.get("commands").values():
@@ -152,7 +113,10 @@ class YAMLConfig(TurmyxConfig):
 
         return dict(file_editors=editors, url_openers=openers)
 
-    def save(self, config_file: Path = CONFIG_FILE):
+    def save(self, config_file: Optional[Path] = None):
+        if config_file is None:
+            config_file = self.config_file
+
         yml_data = self.as_dict()
         with config_file.open("w") as cf:
             yaml.dump(yml_data, cf, indent=4, allow_unicode=True)
