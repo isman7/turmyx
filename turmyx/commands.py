@@ -1,7 +1,7 @@
 import shutil
 from dataclasses import dataclass, field, asdict
 from subprocess import Popen
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional
 
 CommandDictType = Dict[str, Dict[str, Union[str, Dict[str, Any]]]]
 
@@ -28,6 +28,10 @@ class CommandEntry:
         d["classes"] = " ".join(d.get("classes"))
         return d
 
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
+
 
 class Command(CommandEntry, Popen):
     """
@@ -42,24 +46,31 @@ class Command(CommandEntry, Popen):
 
     @classmethod
     def from_command(cls, command: CommandEntry):
-        return cls(**asdict(command))
+        return cls.from_dict(command.as_dict())
 
 
 class CommandDict(dict):
 
-    def __init__(self, cfg: Dict[str, Dict[str, dict]]):
-        self.default = CommandEntry(name="default", **cfg.get("default"))
-        commands = cfg.get("commands")
-        super(CommandDict, self).__init__((n, CommandEntry(name=n, **d)) for n, d in commands.items())
-        self.update(default=self.default)
+    def __init__(self, input_dict: Dict[str, Dict[str, dict]], default: str = "default"):
+
+        if default not in input_dict:
+            raise KeyError("default item is not found in input dict")
+
+        super(CommandDict, self).__init__(input_dict)
+
+        if default != "default":
+            self["default"] = self.pop(default)
+
+    @property
+    def default(self):
+        return self.get("default")
 
     def __getitem__(self, item: str) -> 'CommandEntry':
-        if item == "default":
-            return self.default
         return super(CommandDict, self).__getitem__(item)
 
     def __setitem__(self, key, value):
-        assert isinstance(value, CommandEntry)
+        if not isinstance(value, CommandEntry):
+            value = CommandEntry(**value)
         super(CommandDict, self).__setitem__(key, value)
 
     def get(self, k) -> 'CommandEntry':

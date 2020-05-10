@@ -48,6 +48,26 @@ class CfgConfig(ConfigParser, TurmyxConfig):
     def get_url_opener(self, domain: str) -> Command:
         return self.__get_command("url-openers", "domains", domain)
 
+    def __get_commands(self, kind: str, class_kind: str):
+        commands = dict()
+
+        sections = [self[section] for section in self.sections() if kind in section]
+        for section in sections:
+            command = CommandEntry(
+                command=section["command"],
+                args=section["args"] if "args" in section else "",
+                classes=section[class_kind].split(" ") if class_kind in section else [],
+                name=section.name.split(":")[1]
+            )
+            commands.update({section.name.split(":")[1]: command})
+        return CommandDict(commands)
+
+    def get_editors(self) -> CommandDict:
+        return self.__get_commands("file-editors", "extensions")
+
+    def get_openers(self) -> CommandDict:
+        return self.__get_commands("url-openers", "domains")
+
     def __set_command(self, command: Union[Command, CommandEntry], kind: str = "file-editors"):
         name = command.name if command.name else Path(command.command).name
         section = f"{kind}:{name}"
@@ -94,13 +114,19 @@ class YAMLConfig(TurmyxConfig):
         for d in editors.get("commands").values():
             d["classes"] = d.pop("extensions")
 
-        self.file_editors = CommandDict(editors)
+        editors_commands = editors.get("commands")
+        editors_commands.update(default=editors.get("default"))
+
+        self.file_editors = CommandDict(editors_commands)
 
         openers = yml_data.get("url-openers")
         for d in openers.get("commands").values():
             d["classes"] = d.pop("domains")
 
-        self.url_openers = CommandDict(openers)
+        openers_commands = openers.get("commands")
+        openers_commands.update(default=openers.get("default"))
+
+        self.url_openers = CommandDict(openers_commands)
 
         return self
 
@@ -139,6 +165,12 @@ class YAMLConfig(TurmyxConfig):
 
     def get_url_opener(self, domain: str) -> Command:
         return self.__get_command(self.url_openers, domain)
+
+    def get_editors(self) -> CommandDict:
+        return self.file_editors
+
+    def get_openers(self) -> CommandDict:
+        return self.url_openers
 
     def set_file_editor(self, command: Union[Command, CommandEntry]) -> 'TurmyxConfig':
         self.file_editors[command.name] = command

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union, Optional
 
-from turmyx.commands import Command, CommandEntry
+from turmyx.commands import Command, CommandEntry, CommandDict
 
 
 CONFIG_FILE = Path(__file__).parent.parent.parent.absolute() / "turmyxconf.yml"
@@ -27,6 +27,14 @@ class TurmyxConfig(ABC):
 
     @abstractmethod
     def get_url_opener(self, domain: str) -> Command:
+        pass
+
+    @abstractmethod
+    def get_editors(self) -> CommandDict:
+        pass
+
+    @abstractmethod
+    def get_openers(self) -> CommandDict:
         pass
 
     @abstractmethod

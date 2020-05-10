@@ -26,9 +26,23 @@ def remove(config_ctx: TurmyxConfig):
 
 
 @scripts.command("list")
+@click.option('--editors', is_flag=True, help="Only show file editor scripts.")
+@click.option('--openers', is_flag=True, help="Only show url opener scripts.")
 @pass_config
-def list(config_ctx: TurmyxConfig):
-    pass
+def scripts_list(config_ctx: TurmyxConfig, editors: bool, openers: bool):
+    """
+    List all available scripts to edit a file or open an url.
+    """
+
+    # Boolean trick to ensure both are computed when both flags are False:
+    if not openers ^ editors:
+        editors = openers = True
+
+    if editors:
+        click.echo(f"{config_ctx.get_editors()}")
+
+    if openers:
+        click.echo(f"{config_ctx.get_openers()}")
 
 
 @scripts.command("link")
