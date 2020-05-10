@@ -5,9 +5,9 @@ import click
 
 from turmyx.commands import CommandEntry
 from turmyx.config import TurmyxConfig, CfgConfig, YAMLConfig, pass_config
-from turmyx.utils import parse_path
-
 from turmyx.open import turmyx_open
+from turmyx.utils import parse_path
+from turmyx.scripts import scripts
 
 
 @click.group()
@@ -38,6 +38,9 @@ def cli(ctx: click.Context, file):
     else:
         print(YAMLConfig().config_file)
         ctx.obj = YAMLConfig().load()
+
+
+cli.add_command(scripts)
 
 
 @cli.command()
