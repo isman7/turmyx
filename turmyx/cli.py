@@ -40,9 +40,6 @@ def cli(ctx: click.Context, file):
         ctx.obj = YAMLConfig().load()
 
 
-cli.add_command(scripts)
-
-
 @cli.command()
 @click.option('--merge',
               'mode',
@@ -101,6 +98,7 @@ def config(config_ctx: TurmyxConfig, file, mode, view):
 # cli.add_command(editor)
 # cli.add_command(opener)
 cli.add_command(turmyx_open)
+cli.add_command(scripts)
 
 
 @cli.command()

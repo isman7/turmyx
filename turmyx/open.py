@@ -57,29 +57,3 @@ def opener(config_ctx: TurmyxConfig, url):
         click.echo(output)
     except FileNotFoundError:
         click.echo("'{}' not found. Please check the any typo or installation.".format(command.command))
-
-
-@turmyx_open.command("install")
-def install():
-    """
-    Link `turmyx open file` and `turmyx open url` commands to termux.
-
-    The links will be as follow, using the short-cut scripts:
-
-         $PREFIX/bin/turmyx-open → ~/bin/termux-file-editor
-         $PREFIX/bin/turmyx-open-url → ~/bin/termux-url-opener
-
-    """
-
-    prefix = Path(os.environ.get("PREFIX"))
-    home = Path(os.environ.get("HOME"))
-
-    assert prefix.exists() and home.exists()
-
-    os.symlink(prefix / "bin" / "turmyx-open", home / "bin" / "termux-file-editor")
-    os.symlink(prefix / "bin" / "turmyx-open-url", home / "bin" / "termux-url-opener")
-
-
-
-
-
