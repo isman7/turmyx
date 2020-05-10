@@ -7,6 +7,9 @@ with open('requirements.txt', 'r') as f:
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
+with open('scripts.ini', 'r', encoding='utf-8') as f:
+    entry_points = f.read()
+
 package_dir = 'turmyx'
 
 with (Path(package_dir) / '_version.py').open() as f:
@@ -27,10 +30,5 @@ setup(
     long_description=long_description,
 
     install_requires=requirements,
-    entry_points='''
-        [console_scripts]
-        turmyx=turmyx:cli
-        turmyx-url-opener=turmyx:opener
-        turmyx-file-editor=turmyx:editor
-    ''',
+    entry_points=entry_points,
 )

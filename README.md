@@ -151,9 +151,10 @@ Options:
 - ~~Create docker environment~~
 - ~~Change INI to YAML~~, well both are supported now. 
 - Re-structure CLI commands:
-    - Unify `turmyx opener` and `turmyx editor` into `turmyx open`, with `turmyx-open` linked.
-    - Maintain `turmyx-file-editor`, however map to: `turmyx open file`
-    - Maintain `turmyx-url-opener`, however map to: `turmyx open url`
+    - ~~Unify `turmyx opener` and `turmyx editor` into `turmyx open`, with `turmyx-open` linked.~~
+    - ~~Maintain `turmyx-file-editor`, however map to: `turmyx open file`.~~ → New `turmyx-open`.
+    - ~~Maintain `turmyx-url-opener`, however map to: `turmyx open url`.~~ → New `turmyx-open-url`.
+    - ~~New `turmyx open install`, to create the symbolic links towards `termux-url-opener` and `termux-file-editor`.~~ 
     - Unify `turmyx add`, `turmyx remove` and `turmyx config --view` into `turmyx scripts`
     - Create a `turmyx -f FILE_PATH --commit` flag that enables saving values from a given config file to the system
      one. Also port here the soft-link feature. 

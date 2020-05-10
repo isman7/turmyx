@@ -1,7 +1,9 @@
 from configparser import ConfigParser, ExtendedInterpolation, SectionProxy
+from functools import update_wrapper
 from pathlib import Path
 from typing import Union, Optional
 
+import click
 import yaml
 
 from turmyx.commands import Command, CommandEntry, CommandDict, CommandDictType
@@ -12,9 +14,10 @@ class CfgConfig(ConfigParser, TurmyxConfig):
     def __init__(self):
         super(CfgConfig, self).__init__(interpolation=ExtendedInterpolation())
 
-    def load(self, config_file: Path) -> 'CfgConfig':
-        self.config_file = config_file
-        self.read(config_file.as_posix())
+    def load(self, config_file: Optional[Path] = None) -> 'CfgConfig':
+        if config_file is not None:
+            self.config_file = config_file
+        self.read(self.config_file.as_posix())
         return self
 
     def save(self, config_file: Optional[Path] = None):
@@ -81,9 +84,10 @@ class YAMLConfig(TurmyxConfig):
         self.url_openers = None
         super(YAMLConfig, self).__init__()
 
-    def load(self, config_file: Path) -> 'YAMLConfig':
-        self.config_file = config_file
-        with config_file.open() as cf:
+    def load(self, config_file: Optional[Path] = None) -> 'YAMLConfig':
+        if config_file is not None:
+            self.config_file = config_file
+        with self.config_file.open() as cf:
             yml_data = yaml.load(cf, Loader=yaml.FullLoader)
 
         editors: CommandDictType = yml_data.get("file-editors")
@@ -147,3 +151,13 @@ class YAMLConfig(TurmyxConfig):
 
     def remove_url_opener(self, command_name: str) -> 'TurmyxConfig':
         self.url_openers.pop(command_name)
+
+
+def pass_config(f):
+    @click.pass_obj
+    def wrapper(config_ctx: TurmyxConfig, *args, **kwargs):
+        if config_ctx is None:
+            config_ctx = YAMLConfig().load()
+        return f(config_ctx, *args, **kwargs)
+
+    return update_wrapper(wrapper, f)
