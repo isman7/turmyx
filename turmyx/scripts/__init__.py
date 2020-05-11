@@ -14,6 +14,32 @@ def scripts(config_ctx: TurmyxConfig):
     """
 
 
+@scripts.command("install")
+@click.option('-m', '--merge', is_flag=True, help="If provided a merge will be attempted.")
+@pass_config
+def install(config_ctx: TurmyxConfig, merge: bool):
+    """
+     Install the provided file to `turmyx -f` into the system one.
+
+     If you provide a file to turmyx using the syntax `turmyx -f turmyxconf_local.yml`, the `turmyxconf_local.yml`
+     configuration will be saved onto the system one.
+
+     If you provide the `--merge` option, a merge will be attempted, expect some overrides.
+    """
+
+    config_cls = type(config_ctx)
+
+    default_conf = config_cls().load()
+    default_conf_file = default_conf.config_file
+
+    if merge:
+        default_conf.load(config_ctx.config_file).save(default_conf_file)
+        return
+    else:
+        config_ctx.save(config_file=default_conf_file)
+        return
+
+
 @scripts.command("add")
 @click.option('--editor', is_flag=True, help="Configure new script as file editor.")
 @click.option('--opener', is_flag=True, help="Configure new script as url opener.")

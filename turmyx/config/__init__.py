@@ -117,7 +117,10 @@ class YAMLConfig(TurmyxConfig):
         editors_commands = editors.get("commands")
         editors_commands.update(default=editors.get("default"))
 
-        self.file_editors = CommandDict(editors_commands)
+        if self.file_editors:
+            self.file_editors.update(CommandDict(editors_commands))
+        else:
+            self.file_editors = CommandDict(editors_commands)
 
         openers = yml_data.get("url-openers")
         for d in openers.get("commands").values():
@@ -126,7 +129,10 @@ class YAMLConfig(TurmyxConfig):
         openers_commands = openers.get("commands")
         openers_commands.update(default=openers.get("default"))
 
-        self.url_openers = CommandDict(openers_commands)
+        if self.url_openers:
+            self.url_openers.update(CommandDict(openers_commands))
+        else:
+            self.url_openers = CommandDict(openers_commands)
 
         return self
 
