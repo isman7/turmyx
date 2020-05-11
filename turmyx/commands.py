@@ -9,7 +9,7 @@ CommandDictType = Dict[str, Dict[str, Union[str, Dict[str, Any]]]]
 @dataclass
 class CommandEntry:
     command: str
-    classes: List[str] = field(default_factory=list)
+    classes: Union[List[str], str] = field(default_factory=list)
     args: str = ""
     name: str = ""
 
@@ -58,14 +58,19 @@ class CommandDict(dict):
 
         super(CommandDict, self).__init__(input_dict)
 
+        for k, v in self.items():
+            self[k] = v  # Re-assign to ensure cast
+
         if default != "default":
             self["default"] = self.pop(default)
 
     @property
     def default(self):
-        return self.get("default")
+        return self["default"]
 
     def __getitem__(self, item: str) -> 'CommandEntry':
+        if item not in self:
+            return self.default
         return super(CommandDict, self).__getitem__(item)
 
     def __setitem__(self, key, value):

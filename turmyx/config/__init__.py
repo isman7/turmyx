@@ -140,7 +140,7 @@ class YAMLConfig(TurmyxConfig):
         for d in openers.get("commands").values():
             d["domains"] = d.pop("classes")
 
-        return dict(file_editors=editors, url_openers=openers)
+        return {"file-editors": editors, "url-openers": openers}
 
     def save(self, config_file: Optional[Path] = None):
         if config_file is None:
