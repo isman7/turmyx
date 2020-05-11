@@ -101,9 +101,41 @@ def add(
 
 
 @scripts.command("remove")
+@click.option('--editor', is_flag=True, help="Remove script only in the file editors list.")
+@click.option('--opener', is_flag=True, help="Remove script only in the url openers list.")
+@click.argument(
+    'script',
+    type=str,
+    required=True
+)
 @pass_config
-def remove(config_ctx: TurmyxConfig):
-    pass
+def remove(
+        config_ctx: TurmyxConfig,
+        editor: bool,
+        opener: bool,
+        script: str
+):
+    """
+    Removes script configuration.
+    """
+
+    # Boolean trick to ensure both are computed when both flags are False:
+    if not opener ^ editor:
+        editor = opener = True
+
+    if editor and script in config_ctx.get_editors():
+        config_ctx.remove_file_editor(script)
+        click.echo(f"'{script}' file editor successfully removed!")
+    else:
+        click.echo(f"'{script}' not found or skipped in file editors.")
+
+    if opener and script in config_ctx.get_openers():
+        config_ctx.remove_url_opener(script)
+        click.echo(f"'{script}' url opener successfully removed!")
+    else:
+        click.echo(f"'{script}' not found or skipped in url openers.")
+
+    config_ctx.save()
 
 
 @scripts.command("list")
