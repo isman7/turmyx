@@ -3,6 +3,7 @@ from pathlib import Path
 import click
 
 from turmyx.config import pass_config, TurmyxConfig
+from turmyx.commands import CommandEntry
 
 
 @click.group(name="scripts")
@@ -14,9 +15,89 @@ def scripts(config_ctx: TurmyxConfig):
 
 
 @scripts.command("add")
+@click.option('--editor', is_flag=True, help="Configure new script as file editor.")
+@click.option('--opener', is_flag=True, help="Configure new script as url opener.")
+@click.option(
+    '-n', '--name',
+    type=str,
+    nargs=1,
+    help='A name for the script configuration, otherwise it will be guessed from script path.'
+)
+@click.option(
+    '-d', '--default',
+    is_flag=True,
+    help='The script will be saved as default one for the given mode, --name option and any argument in '
+         'CASES_LIST would be ignored.'
+)
+@click.argument(
+    'script',
+    type=str,
+    required=True
+)
+@click.argument(
+    'cases_list',
+    type=str,
+    nargs=-1,
+    required=False,
+)
 @pass_config
-def add(config_ctx: TurmyxConfig):
-    pass
+def add(
+        config_ctx: TurmyxConfig,
+        editor: bool,
+        opener: bool,
+        script: str,
+        cases_list: str,
+        name: str,
+        default: bool
+):
+    """
+    Add a new script configuration.
+
+    Examples:
+
+        turmyx add editor nano txt md ini
+
+        turmyx add --name radare editor r2 exe
+
+        turmyx add opener youtube-dl youtube.com youtu.be
+
+        turmyx add --default opener qr
+
+
+    Adds a new script to Turmyx, the configuration name is set inline by an OPTION --name, otherwise the name is
+    guessed from script name. The argument MODE has to be 'editor' or 'opener' and sets the run environment of the
+    script. SCRIPT must be a valid path to the script/program, and must be executable, otherwise when executing it
+    would lead to an exception. Finally, the CASES_LIST will contain a list of extensions or domains to be used along
+     with the script.
+
+    """
+
+    if not editor ^ opener:
+        click.echo("You must choose --editor or --opener, can't be both or neither.")
+        return
+
+    click.echo("Evaluating script: {}".format(script))
+
+    try:
+        basename = Path(script).name
+
+        command = CommandEntry(
+            command=script,
+            name=name if name else basename if not default else "default",
+            classes=cases_list,
+        )
+        click.echo("Absolute path found for script: {}".format(command.command))
+
+        if editor:
+            config_ctx.set_file_editor(command)
+        if opener:
+            config_ctx.set_url_opener(command)
+
+        config_ctx.save()
+
+    except FileNotFoundError:
+        click.echo("Given script not found or not executable.")
+        return
 
 
 @scripts.command("remove")
